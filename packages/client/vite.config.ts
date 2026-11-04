@@ -5,6 +5,16 @@ import locales from "../../locales/index.mjs";
 import meta from "../../package.json" with { type: "json" };
 import pluginJson5 from "./vite.json5";
 import viteCompression from "vite-plugin-compression";
+import { existsSync } from "node:fs";
+
+// Módulos privados de la instancia oficial (carpeta .fedired/, no incluida en el repo).
+// Si no existen (p. ej. en CI o en un clon público), usa el stub de .fedired.example/.
+const privateModule = (name: string) => {
+	const real = `${__dirname}/../../.fedired/${name}`;
+	return existsSync(real)
+		? real
+		: `${__dirname}/../../.fedired.example/${name}`;
+};
 
 const extensions = [
 	".ts",
@@ -43,7 +53,7 @@ export default defineConfig(({ command, mode }) => {
 				"/client-assets/": `${__dirname}/assets/`,
 				"/static-assets/": `${__dirname}/../backend/assets/`,
 				"@fedired/verified-users": `${__dirname}/../../.fedired/verified-users.ts`,
-				"@fedired/sponsor": `${__dirname}/../../.fedired/sponsor.ts`,
+				"@fedired/sponsor": privateModule("sponsor.ts"),
 			},
 		},
 
