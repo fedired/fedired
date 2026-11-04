@@ -92,7 +92,7 @@
 		"qrcode": "1.5.4",
 		"qs": "6.13.0",
 		"ratelimiter": "3.4.1",
-		"redis-semaphore": "5.6.0",
+		"redis-semaphore": "6.0.0",
 		"reflect-metadata": "0.2.2",
 		"rename": "1.0.4",
 		"rndstr": "1.0.0",
