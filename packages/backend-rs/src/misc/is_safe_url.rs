@@ -19,22 +19,12 @@ mod unit_test {
     fn is_safe_url() {
         assert!(super::is_safe_url("http://github.com/fedired/fedired"));
         assert!(super::is_safe_url("https://github.com/fedired/fedired"));
-        assert!(super::is_safe_url(
-            "http://github.com:80/fedired/fedired"
-        ));
-        assert!(super::is_safe_url(
-            "https://github.com:80/fedired/fedired"
-        ));
-        assert!(super::is_safe_url(
-            "http://github.com:443/fedired/fedired"
-        ));
-        assert!(super::is_safe_url(
-            "https://github.com:443/fedired/fedired"
-        ));
+        assert!(super::is_safe_url("http://github.com:80/fedired/fedired"));
+        assert!(super::is_safe_url("https://github.com:80/fedired/fedired"));
+        assert!(super::is_safe_url("http://github.com:443/fedired/fedired"));
+        assert!(super::is_safe_url("https://github.com:443/fedired/fedired"));
         assert!(!super::is_safe_url("https://unix/fedired/fedired"));
-        assert!(!super::is_safe_url(
-            "https://github.com:35/fedired/fedired"
-        ));
+        assert!(!super::is_safe_url("https://github.com:35/fedired/fedired"));
         assert!(!super::is_safe_url("ftp://github.com/fedired/fedired"));
         assert!(!super::is_safe_url("nyaa"));
         assert!(!super::is_safe_url(""));

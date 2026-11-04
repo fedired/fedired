@@ -145,14 +145,19 @@ mod unit_test {
     #[tokio::test]
     #[cfg_attr(miri, ignore)] // can't call foreign function `getaddrinfo` on OS `linux`
     async fn get_image_size_from_url() {
-        let png_url_1 = "https://github.com/fedired/fedired/raw/main/packages/backend/assets/splash.png";
+        let png_url_1 =
+            "https://github.com/fedired/fedired/raw/main/packages/backend/assets/splash.png";
         let png_url_2 = "https://github.com/fedired/fedired/raw/main/packages/backend/assets/notification-badges/at.png";
-        let png_url_3 = "https://github.com/fedired/fedired/raw/main/packages/backend/assets/api-doc.png";
+        let png_url_3 =
+            "https://github.com/fedired/fedired/raw/main/packages/backend/assets/api-doc.png";
         let rotated_jpeg_url = "https://github.com/fedired/fedired/raw/main/packages/backend/test/resources/rotate.jpg";
-        let webp_url_1 = "https://github.com/fedired/fedired/raw/main/custom/assets/badges/error.webp";
+        let webp_url_1 =
+            "https://github.com/fedired/fedired/raw/main/custom/assets/badges/error.webp";
         let webp_url_2 = "https://github.com/fedired/fedired/raw/main/packages/backend/assets/screenshots/1.webp";
-        let ico_url = "https://github.com/fedired/fedired/raw/main/packages/backend/assets/favicon.ico";
-        let gif_url = "https://github.com/fedired/fedired/raw/main/packages/backend/test/resources/anime.gif";
+        let ico_url =
+            "https://github.com/fedired/fedired/raw/main/packages/backend/assets/favicon.ico";
+        let gif_url =
+            "https://github.com/fedired/fedired/raw/main/packages/backend/test/resources/anime.gif";
         let mp3_url = "https://github.com/fedired/fedired/raw/main/packages/backend/assets/sounds/aisha/1.mp3";
 
         // delete caches in case you run this test multiple times

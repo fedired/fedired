@@ -82,8 +82,8 @@ pub async fn to_db_reaction(
         static RE: Lazy<Regex> =
             Lazy::new(|| Regex::new(r"^:([0-9A-Za-z_+-]+)(?:@\.)?:$").unwrap());
 
-            if let Some(captures) = RE.captures(&reaction) {
-                let name = &captures[1];
+        if let Some(captures) = RE.captures(&reaction) {
+            let name = &captures[1];
             let db = db_conn().await?;
 
             if let Some(host) = host {

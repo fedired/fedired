@@ -95,10 +95,7 @@ mod unit_test {
             host: None,
         };
 
-        assert_eq!(
-            Acct::from_str("@fedired@example.com").unwrap(),
-            remote_acct
-        );
+        assert_eq!(Acct::from_str("@fedired@example.com").unwrap(), remote_acct);
         assert_eq!(Acct::from_str("@fedired@example.com").unwrap(), remote_acct);
         assert_eq!(Acct::from_str("@srnovus").unwrap(), local_acct);
         assert_eq!(Acct::from_str("JavierCaceres").unwrap(), local_acct);

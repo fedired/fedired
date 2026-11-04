@@ -26,8 +26,7 @@ struct PackageJson {
     version: String,
 }
 
-const UPSTREAM_PACKAGE_JSON_URL: &str =
-    "https://github.com/fedired/fedired/raw/main/package.json";
+const UPSTREAM_PACKAGE_JSON_URL: &str = "https://github.com/fedired/fedired/raw/main/package.json";
 
 static PACKAGE_JSON_CACHE: Cache<PackageJson> = Cache::new_with_ttl(Duration::hours(3));
 
@@ -91,8 +90,7 @@ mod unit_test {
         // -PRE_RELEASE
         if let Some(pre) = pre_release {
             assert!(
-                !pre.is_empty()
-                    && pre.chars().all(|c| c.is_ascii_alphanumeric() || c == '.'),
+                !pre.is_empty() && pre.chars().all(|c| c.is_ascii_alphanumeric() || c == '.'),
                 "invalid pre-release in version: {version}"
             );
         }
