@@ -43,7 +43,7 @@ serde = { version = "1.0.209", default-features = false }
 serde_json = { version = "1.0.127", default-features = false }
 serde_yaml = { version = "0.9.34", default-features = false }
 syn = { version = "2.0.77", default-features = false }
-sysinfo = { version = "0.31.4", default-features = false }
+sysinfo = { version = "0.40.1", default-features = false }
 thiserror = { version = "1.0.63", default-features = false }
 tokio = { version = "1.40.0", default-features = false }
 tokio-test = { version = "0.4.4", default-features = false }
