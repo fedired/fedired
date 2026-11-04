@@ -158,7 +158,7 @@
 		"@types/uuid": "10.0.0",
 		"@types/websocket": "1.0.10",
 		"@types/ws": "8.5.12",
-		"cross-env": "7.0.3",
+		"cross-env": "10.1.0",
 		"pug": "3.0.3",
 		"strict-event-emitter-types": "2.0.0",
 		"ts-loader": "9.5.1",
