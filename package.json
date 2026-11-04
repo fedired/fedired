@@ -46,7 +46,7 @@
 		"clean-all": "pnpm run clean && pnpm run clean-cargo && pnpm run clean-npm"
 	},
 	"dependencies": {
-		"js-yaml": "4.1.0"
+		"js-yaml": "5.5.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.8.3",
