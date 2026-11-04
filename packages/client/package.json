@@ -51,7 +51,7 @@
 		"eventemitter3": "5.0.1",
 		"fast-blurhash": "1.1.4",
 		"fedired-js": "workspace:*",
-		"focus-trap": "7.5.4",
+		"focus-trap": "8.2.4",
 		"focus-trap-vue": "4.0.3",
 		"gsap": "3.12.5",
 		"idb-keyval": "6.2.1",
