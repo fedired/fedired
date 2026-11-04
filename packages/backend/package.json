@@ -45,7 +45,7 @@
 		"chalk": "5.3.0",
 		"cli-highlight": "2.1.11",
 		"color-convert": "2.0.1",
-		"content-disposition": "0.5.4",
+		"content-disposition": "3.0.0",
 		"date-fns": "3.6.0",
 		"decompress": "4.2.1",
 		"deep-email-validator": "0.1.21",
