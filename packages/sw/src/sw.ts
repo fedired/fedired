@@ -1,7 +1,10 @@
-import { get } from "idb-keyval";
 import { acct } from "fedired-js";
 import type { PushNotificationDataMap } from "@/types";
-import { createEmptyNotification, createNotification } from "@/scripts/create-notification";
+import {
+  closeNotificationsByTags,
+  createEmptyNotification,
+  createNotification,
+} from "@/scripts/create-notification";
 import { swLang } from "@/scripts/lang";
 import * as swos from "@/scripts/operations";
 
@@ -90,29 +93,63 @@ async function fetchWithOfflineFallback(request: Request): Promise<Response> {
   }
 }
 
+// El cliente envía el idioma al registrar el SW (ver client/src/scripts/initialize-sw.ts).
+// Sin esto, las notificaciones usaban el idioma por defecto en vez del del usuario.
+globalThis.addEventListener("message", (ev) => {
+  const data = (ev as MessageEvent).data;
+  if (data?.msg === "initialize" && typeof data.lang === "string") {
+    swLang.setLang(data.lang).catch((err) => console.error("Could not set SW language", err));
+  }
+});
+
 // Event listener para notificaciones push
-globalThis.addEventListener("push", (ev) => {
+(globalThis as unknown as ServiceWorkerGlobalScope).addEventListener("push", (ev) => {
   ev.waitUntil(handlePushNotification(ev));
 });
 
 // Manejo de las notificaciones push
-async function handlePushNotification(ev: PushEvent) {
-  const data: PushNotificationDataMap[keyof PushNotificationDataMap] = ev.data?.json();
+// Regla: cada push DEBE terminar mostrando una notificación (Chrome lo exige con userVisibleOnly).
+async function handlePushNotification(ev: PushEvent): Promise<void> {
+  try {
+    const data: PushNotificationDataMap[keyof PushNotificationDataMap] | null = ev.data?.json() ?? null;
+    if (!data) return createEmptyNotification();
 
-  if (!data) return;
-
-  switch (data.type) {
-    case "notification":
-    case "unreadAntennaNote":
-      if (Date.now() - data.dateTime > 1000 * 60 * 60 * 24) return; // Ignorar notificaciones antiguas
-      await createNotification(data);
-      break;
-    case "readAllNotifications":
-      await closeNotifications();
-      break;
-    default:
-      await createEmptyNotification();
+    switch (data.type) {
+      case "notification":
+        // Ignorar notificaciones antiguas
+        if (Date.now() - data.dateTime > 1000 * 60 * 60 * 24) return createEmptyNotification();
+        return createNotification(data);
+      case "unreadAntennaNote":
+      case "unreadMessagingMessage":
+        return createNotification(data);
+      case "readAllNotifications":
+        await closeNotifications();
+        return createEmptyNotification();
+      case "readAllMessagingMessages":
+        await closeNotificationsByTags(await messagingTags());
+        return createEmptyNotification();
+      case "readAllMessagingMessagesOfARoom": {
+        const body = data.body as { userId?: string; groupId?: string };
+        const tag = body.userId ? `messaging:user:${body.userId}` : `messaging:group:${body.groupId}`;
+        await closeNotificationsByTags([tag]);
+        return createEmptyNotification();
+      }
+      default:
+        return createEmptyNotification();
+    }
+  } catch (err) {
+    console.error("Failed to handle push notification", err);
+    return createEmptyNotification();
   }
+}
+
+// Tags de las notificaciones de chat (ver composeNotification en create-notification.ts)
+async function messagingTags(): Promise<string[]> {
+  const scope = globalThis as unknown as ServiceWorkerGlobalScope;
+  const notifications = await scope.registration.getNotifications();
+  return notifications
+    .map((n) => n.tag)
+    .filter((tag) => tag.startsWith("messaging:"));
 }
 
 // Cerrar todas las notificaciones

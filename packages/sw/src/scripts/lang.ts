@@ -4,11 +4,14 @@
 import { get, set } from "idb-keyval";
 import { I18n, type Locale } from "@/scripts/i18n";
 
+// Must match a file in locales/ (e.g. locales/es-ES.yml). Case-sensitive on the server.
+const DEFAULT_LANG = "es-ES";
+
 class SwLang {
 	public cacheName = `mk-cache-${_VERSION_}`;
 
 	public lang: Promise<string> = get("lang").then(async (prelang) => {
-		if (!prelang) return "es-Es";
+		if (!prelang) return DEFAULT_LANG;
 		return prelang;
 	});
 
@@ -25,20 +28,35 @@ class SwLang {
 	}
 
 	private async _fetch(): Promise<I18n<Locale>> {
-		// Service Workerは何度も起動しそのたびにlocaleを読み込むので、CacheStorageを使う
-		const localeUrl = `/assets/locales/${await this.lang}.${_VERSION_}.json`;
-		let localeRes = await caches.match(localeUrl);
+		const lang = await this.lang;
+		let localeRes = await this.loadLocale(lang);
 
-		// _DEV_がtrueの場合は常に最新化
-		if (!localeRes || _DEV_) {
-			localeRes = await fetch(localeUrl);
-			const clone = localeRes.clone();
-			if (!clone.clone().ok) throw new Error("locale fetching error");
-
-			caches.open(this.cacheName).then((cache) => cache.put(localeUrl, clone));
+		// Si el idioma pedido no existe en el servidor, usar el idioma por defecto
+		if (!localeRes && lang !== DEFAULT_LANG) {
+			localeRes = await this.loadLocale(DEFAULT_LANG);
 		}
+		if (!localeRes) throw new Error(`locale fetching error: ${lang}`);
 
 		return new I18n<Locale>(await localeRes.json());
+	}
+
+	private async loadLocale(lang: string): Promise<Response | null> {
+		const localeUrl = `/assets/locales/${lang}.${_VERSION_}.json`;
+
+		// Service Workerは何度も起動しそのたびにlocaleを読み込むので、CacheStorageを使う
+		const cached = await caches.match(localeUrl);
+
+		// _DEV_がtrueの場合は常に最新化
+		if (cached && !_DEV_) return cached;
+
+		const fetched = await fetch(localeUrl).catch(() => null);
+		if (!fetched?.ok) return cached ?? null;
+
+		// clone antes de consumir el cuerpo, para poder guardarlo en caché
+		const toCache = fetched.clone();
+		caches.open(this.cacheName).then((cache) => cache.put(localeUrl, toCache));
+
+		return fetched;
 	}
 }
 

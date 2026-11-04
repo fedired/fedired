@@ -10,12 +10,15 @@ export type SwMessage = {
 	[x: string]: unknown;
 };
 
+// Debe coincidir con PushNotificationKind en packages/backend-rs/src/service/push_notification.rs
 type PushNotificationDataSourceMap = {
 	notification: entities.Notification;
 	unreadAntennaNote: {
 		antenna: { id: string; name: string };
 		note: entities.Note;
 	};
+	unreadMessagingMessage: entities.MessagingMessage;
+	readNotifications: { notificationIds: string[] };
 	readAllNotifications: undefined;
 	readAllMessagingMessages: undefined;
 	readAllMessagingMessagesOfARoom: { userId: string } | { groupId: string };

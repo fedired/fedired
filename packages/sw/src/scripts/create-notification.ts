@@ -7,10 +7,18 @@ import { getAccountFromId } from "@/scripts/get-account-from-id";
 import { swLang } from "@/scripts/lang";
 import { getUserName } from "@/scripts/get-user-name";
 
-const closeNotificationsByTags = async (tags: string[]): Promise<void> => {
+const swScope = self as unknown as ServiceWorkerGlobalScope;
+
+// `actions` y `renotify` existen en el navegador pero no en los tipos de lib.dom
+type SwNotificationOptions = NotificationOptions & {
+	actions?: { action: string; title: string }[];
+	renotify?: boolean;
+};
+
+export const closeNotificationsByTags = async (tags: string[]): Promise<void> => {
 	for (const n of (
 		await Promise.all(
-			tags.map((tag) => globalThis.registration.getNotifications({ tag })),
+			tags.map((tag) => swScope.registration.getNotifications({ tag })),
 		)
 	).flat()) {
 		n.close();
@@ -30,10 +38,17 @@ const iconUrl = (name: BadgeNames): string =>
 export async function createNotification<
 	K extends keyof PushNotificationDataMap,
 >(data: PushNotificationDataMap[K]): Promise<void> {
-	const n = await composeNotification(data);
+	let n: [string, SwNotificationOptions] | null = null;
+	try {
+		n = await composeNotification(data);
+	} catch (err) {
+		// Por ejemplo, si no se pudo cargar el idioma: nunca dejar el push sin notificación
+		console.error("Could not compose notification", err);
+	}
 
 	if (n) {
-		return self.registration.showNotification(...n);
+		const [title, options] = n;
+		return swScope.registration.showNotification(title, options as NotificationOptions);
 	} else {
 		console.error("Could not compose notification", data);
 		return createEmptyNotification();
@@ -42,7 +57,7 @@ export async function createNotification<
 
 async function composeNotification(
 	data: PushNotificationDataMap[keyof PushNotificationDataMap],
-): Promise<[string, NotificationOptions] | null> {
+): Promise<[string, SwNotificationOptions] | null> {
 	const i18n = await (swLang.i18n ?? swLang.fetchLocale());
 	const { t } = i18n;
 	switch (data.type) {
@@ -69,7 +84,7 @@ async function composeNotification(
 						t("_notification.youWereFollowed"),
 						{
 							body: getUserName(data.body.user),
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("user-plus"),
 							data,
 							actions: userDetail.isFollowing
@@ -91,7 +106,7 @@ async function composeNotification(
 						}),
 						{
 							body: data.body.note.text || "",
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("at"),
 							data,
 							actions: [
@@ -110,7 +125,7 @@ async function composeNotification(
 						}),
 						{
 							body: data.body.note.text || "",
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("reply"),
 							data,
 							actions: [
@@ -129,7 +144,7 @@ async function composeNotification(
 						}),
 						{
 							body: data.body.note.text || "",
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("boost"),
 							data,
 							actions: [
@@ -148,7 +163,7 @@ async function composeNotification(
 						}),
 						{
 							body: data.body.note.text || "",
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("quote"),
 							data,
 							actions: [
@@ -196,7 +211,7 @@ async function composeNotification(
 						`${reaction} ${getUserName(data.body.user)}`,
 						{
 							body: data.body.note.text || "",
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge,
 							data,
 							actions: [
@@ -216,7 +231,7 @@ async function composeNotification(
 						}),
 						{
 							body: data.body.note.text || "",
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("poll"),
 							data,
 						},
@@ -237,7 +252,7 @@ async function composeNotification(
 						t("_notification.youReceivedFollowRequest"),
 						{
 							body: getUserName(data.body.user),
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("clock"),
 							data,
 							actions: [
@@ -258,7 +273,7 @@ async function composeNotification(
 						t("_notification.yourFollowRequestAccepted"),
 						{
 							body: getUserName(data.body.user),
-							icon: data.body.user.avatarUrl,
+							icon: data.body.user.avatarUrl ?? undefined,
 							badge: iconUrl("check"),
 							data,
 						},
@@ -306,7 +321,7 @@ async function composeNotification(
 						name: getUserName(data.body.user),
 					}),
 					{
-						icon: data.body.user.avatarUrl,
+						icon: data.body.user.avatarUrl ?? undefined,
 						badge: iconUrl("comments"),
 						tag: `messaging:user:${data.body.userId}`,
 						data,
@@ -316,10 +331,10 @@ async function composeNotification(
 			}
 			return [
 				t("_notification.youGotMessagingMessageFromGroup", {
-					name: data.body.group.name,
+					name: data.body.group?.name ?? "",
 				}),
 				{
-					icon: data.body.user.avatarUrl,
+					icon: data.body.user.avatarUrl ?? undefined,
 					badge: iconUrl("comments"),
 					tag: `messaging:group:${data.body.groupId}`,
 					data,
@@ -331,33 +346,36 @@ async function composeNotification(
 	}
 }
 
+/**
+ * Muestra una notificación silenciosa. Chrome exige que cada push muestre una
+ * notificación (userVisibleOnly); si no, muestra una genérica y, si se repite, revoca el permiso.
+ * Por eso esta función siempre debe mostrar algo, aunque falle la carga del idioma.
+ */
 export async function createEmptyNotification(): Promise<void> {
-	return new Promise<void>(async (res) => {
+	let title = "Fedired";
+	try {
 		const i18n = await (swLang.i18n ?? swLang.fetchLocale());
-		const { t } = i18n;
+		title = i18n.t("_notification.emptyPushNotificationMessage");
+	} catch (err) {
+		console.error("Could not load the SW locale for the empty notification", err);
+	}
 
-		await self.registration.showNotification(
-			t("_notification.emptyPushNotificationMessage"),
-			{
-				silent: true,
-				badge: iconUrl("null"),
-				tag: "read_notification",
-			},
-		);
-
-		res();
-
-		setTimeout(async () => {
-			for (const n of [
-				...(await self.registration.getNotifications({
-					tag: "user_visible_auto_notification",
-				})),
-				...(await self.registration.getNotifications({
-					tag: "read_notification",
-				})),
-			]) {
-				n.close();
-			}
-		}, 1000);
+	await swScope.registration.showNotification(title, {
+		silent: true,
+		badge: iconUrl("null"),
+		tag: "read_notification",
 	});
+
+	setTimeout(async () => {
+		for (const n of [
+			...(await swScope.registration.getNotifications({
+				tag: "user_visible_auto_notification",
+			})),
+			...(await swScope.registration.getNotifications({
+				tag: "read_notification",
+			})),
+		]) {
+			n.close();
+		}
+	}, 1000);
 }
