@@ -135,7 +135,7 @@
 		"@types/koa__cors": "5.0.0",
 		"@types/koa__multer": "2.0.7",
 		"@types/koa__router": "12.0.4",
-		"@types/node": "20.16.2",
+		"@types/node": "26.6.6",
 		"@types/node-fetch": "2.6.11",
 		"@types/nodemailer": "6.4.15",
 		"@types/oauth": "0.9.5",
