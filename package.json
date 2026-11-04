@@ -49,7 +49,7 @@
 		"js-yaml": "4.1.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "1.8.3",
+		"@biomejs/biome": "2.6.4",
 		"@biomejs/cli-darwin-arm64": "1.8.3",
 		"@biomejs/cli-darwin-x64": "1.8.3",
 		"@biomejs/cli-linux-arm64": "1.8.3",
