@@ -27,7 +27,7 @@ futures-util = { version = "0.3.30", default-features = false }
 identicon-rs = "5.0.1"
 idna = { version = "1.0.2", default-features = false }
 image = { version = "0.25.2", default-features = false }
-isahc = { version = "1.7.2", default-features = false }
+isahc = { version = "2.0.2", default-features = false }
 nom-exif = { version = "3.8.0", default-features = false }
 once_cell = { version = "1.19.0", default-features = false }
 pretty_assertions = { version = "1.4.0", default-features = false }
