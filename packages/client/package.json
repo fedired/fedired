@@ -88,6 +88,6 @@
 		"vue-draggable-plus": "0.5.3",
 		"vue-plyr": "7.0.0",
 		"vue-prism-editor": "2.0.0-alpha.2",
-		"vue-tsc": "2.1.4"
+		"vue-tsc": "3.3.14"
 	}
 }
