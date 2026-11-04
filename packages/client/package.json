@@ -39,7 +39,7 @@
 		"broadcast-channel": "7.0.0",
 		"chart.js": "4.4.4",
 		"chartjs-adapter-date-fns": "3.0.0",
-		"chartjs-chart-matrix": "2.0.1",
+		"chartjs-chart-matrix": "3.1.0",
 		"chartjs-plugin-gradient": "0.6.1",
 		"chartjs-plugin-zoom": "2.0.1",
 		"check-password-strength": "2.0.10",
