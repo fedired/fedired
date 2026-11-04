@@ -166,7 +166,7 @@
 		"tsc-alias": "1.8.10",
 		"tsconfig-paths": "4.2.0",
 		"type-fest": "4.26.0",
-		"typescript": "5.5.4",
+		"typescript": "7.0.2",
 		"webpack": "5.94.0",
 		"ws": "8.18.0"
 	}
