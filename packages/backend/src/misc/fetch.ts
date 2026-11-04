@@ -1,11 +1,25 @@
 import * as http from "node:http";
 import * as https from "node:https";
-import type { URL } from "node:url";
+import type { LookupOptions } from "node:dns";
+import { isIP } from "node:net";
+import { URL } from "node:url";
 import CacheableLookup from "cacheable-lookup";
 import fetch, { type RequestRedirect } from "node-fetch";
 import { HttpProxyAgent, HttpsProxyAgent } from "hpagent";
 import { config } from "@/config.js";
 import { isSafeUrl } from "backend-rs";
+import { isPublicAddress } from "@/misc/ssrf-guard.js";
+
+/** Máximo de redirecciones que seguimos nosotros (node-fetch usa 20 por defecto). */
+const MAX_REDIRECTS = 20;
+const REDIRECT_STATUSES = [301, 302, 303, 307, 308];
+/** Cabeceras que no deben viajar a otro origen al seguir una redirección. */
+const CROSS_ORIGIN_STRIPPED_HEADERS = [
+	"authorization",
+	"cookie",
+	"cookie2",
+	"www-authenticate",
+];
 
 export async function getJson(
 	url: string,
@@ -70,33 +84,90 @@ export async function getResponse(args: {
 		controller.abort();
 	}, timeout * 6);
 
-	const res = await fetch(args.url, {
-		method: args.method,
-		headers: args.headers,
-		body: args.body,
-		timeout,
-		size: 10 * 1024 * 1024,
-		agent: getAgentByUrl,
-		signal: controller.signal,
-		redirect: args.redirect,
-	});
+	let url = args.url;
+	let method = args.method;
+	let body = args.body;
+	const headers: Record<string, string> = { ...args.headers };
 
-	if (args.redirect === "manual" && [301, 302, 307, 308].includes(res.status)) {
-		if (!isSafeUrl(res.url)) {
-			throw new StatusError("Invalid URL", 400);
+	// Las redirecciones se siguen a mano (no con node-fetch) para validar cada salto:
+	// node-fetch no pasa por el lookup hook cuando el destino es una IP literal.
+	for (let redirects = 0; ; redirects++) {
+		await assertPublicUrl(url);
+
+		const res = await fetch(url, {
+			method,
+			headers,
+			body,
+			timeout,
+			size: 10 * 1024 * 1024,
+			agent: getAgentByUrl,
+			signal: controller.signal,
+			redirect: "manual",
+		});
+
+		const location = res.headers.get("location");
+		const isRedirect =
+			REDIRECT_STATUSES.includes(res.status) && location != null;
+
+		if (isRedirect && args.redirect === "error") {
+			throw new Error(
+				"uri requested responds with a redirect, redirect mode is set to error",
+			);
 		}
+
+		if (isRedirect && args.redirect !== "manual") {
+			if (redirects >= MAX_REDIRECTS) {
+				throw new Error(`Too many redirects (max ${MAX_REDIRECTS})`);
+			}
+
+			// Drena el cuerpo de la redirección para liberar el socket
+			res.body.resume();
+
+			const next = new URL(location, url);
+			if (!isSafeUrl(next.href)) {
+				throw new StatusError("Invalid URL", 400);
+			}
+
+			if (next.origin !== new URL(url).origin) {
+				for (const key of Object.keys(headers)) {
+					if (CROSS_ORIGIN_STRIPPED_HEADERS.includes(key.toLowerCase())) {
+						delete headers[key];
+					}
+				}
+			}
+
+			if (
+				res.status === 303 ||
+				((res.status === 301 || res.status === 302) && method === "POST")
+			) {
+				method = "GET";
+				body = undefined;
+			}
+
+			url = next.href;
+			continue;
+		}
+
+		if (
+			args.redirect === "manual" &&
+			[301, 302, 307, 308].includes(res.status)
+		) {
+			if (!isSafeUrl(res.url)) {
+				throw new StatusError("Invalid URL", 400);
+			}
+			return res;
+		}
+
+		if (!res.ok) {
+			throw new StatusError(
+				`${res.status} ${res.statusText}`,
+				res.status,
+				res.statusText,
+			);
+		}
+
 		return res;
 	}
-
-	if (!res.ok) {
-		throw new StatusError(
-			`${res.status} ${res.statusText}`,
-			res.status,
-			res.statusText,
-		);
-	}
-
-	return res;
 }
 
 const cache = new CacheableLookup({
@@ -106,12 +177,89 @@ const cache = new CacheableLookup({
 });
 
 /**
+ * Resuelve un hostname con la caché compartida con el connect (mismo resultado que usará el socket).
+ */
+function resolveAll(hostname: string) {
+	return cache.lookupAsync(hostname, { all: true });
+}
+
+function blockedAddressError(): Error {
+	const err = new Error("Blocked private or reserved address") as Error & {
+		code: string;
+	};
+	err.code = "ERR_SSRF_BLOCKED";
+	return err;
+}
+
+/**
+ * Validación previa de cada URL antes de enviarla.
+ * Cubre IP literales (Node no hace lookup para ellas) y también rutas con proxy,
+ * donde el connect lo hace el proxy y el lookup hook no se ejecuta.
+ */
+async function assertPublicUrl(url: string): Promise<void> {
+	const hostname = new URL(url).hostname.replace(/^\[(.*)\]$/, "$1");
+
+	if (isIP(hostname) !== 0) {
+		if (!isPublicAddress(hostname, config.allowedPrivateNetworks)) {
+			throw new StatusError("Blocked private or reserved address", 400);
+		}
+		return;
+	}
+
+	const addresses = await resolveAll(hostname);
+	if (addresses.length === 0) {
+		throw new StatusError(`Cannot resolve host ${hostname}`, 400);
+	}
+	for (const { address } of addresses) {
+		if (!isPublicAddress(address, config.allowedPrivateNetworks)) {
+			throw new StatusError("Blocked private or reserved address", 400);
+		}
+	}
+}
+
+/**
+ * Lookup hook de los agentes: en el momento de conectar, rechaza el socket si
+ * alguna dirección resuelta es privada. Esto cubre el rebinding de DNS, porque
+ * el socket solo puede usar direcciones que pasaron este filtro.
+ */
+// Firma laxa a propósito: Node define varias sobrecargas de lookup (con y sin `all`)
+// y el agente las llama con opciones que dependen de la versión de Node.
+// biome-ignore lint/suspicious/noExplicitAny: sobrecargas de dns.lookup
+const safeLookup = (hostname: string, options: any, callback: any) => {
+	const opts = typeof options === "object" && options != null ? options : {};
+	// Los tipos de LookupOptions de @types/node y de cacheable-lookup no son compatibles (family).
+	const lookupOptions = { ...opts, all: true } as never;
+
+	cache.lookupAsync(hostname, lookupOptions).then(
+		(addresses) => {
+			if (addresses.length === 0) {
+				return callback(
+					Object.assign(new Error(`getaddrinfo ENOTFOUND ${hostname}`), {
+						code: "ENOTFOUND",
+					}),
+				);
+			}
+			for (const { address } of addresses) {
+				if (!isPublicAddress(address, config.allowedPrivateNetworks)) {
+					return callback(blockedAddressError());
+				}
+			}
+			if (opts.all) {
+				return callback(null, [...addresses]);
+			}
+			return callback(null, addresses[0].address, addresses[0].family);
+		},
+		(err: NodeJS.ErrnoException) => callback(err),
+	);
+};
+
+/**
  * Get http non-proxy agent
  */
 const _http = new http.Agent({
 	keepAlive: true,
 	keepAliveMsecs: 30 * 1000,
-	lookup: cache.lookup,
+	lookup: safeLookup,
 	localAddress: config.outgoingAddress,
 } as http.AgentOptions);
 
@@ -121,7 +269,7 @@ const _http = new http.Agent({
 const _https = new https.Agent({
 	keepAlive: true,
 	keepAliveMsecs: 30 * 1000,
-	lookup: cache.lookup,
+	lookup: safeLookup,
 	localAddress: config.outgoingAddress,
 } as https.AgentOptions);
 

@@ -4,7 +4,7 @@ import httpSignature from "@peertube/http-signature";
 import perform from "@/remote/activitypub/perform.js";
 import Logger from "@/services/logger.js";
 import { registerOrFetchInstanceDoc } from "@/services/register-or-fetch-instance-doc.js";
-import { Instances } from "@/models/index.js";
+import { Instances, UserPublickeys } from "@/models/index.js";
 import {
 	extractHost,
 	isAllowedServer,
@@ -22,8 +22,37 @@ import type { CacheableRemoteUser } from "@/models/entities/user.js";
 import type { UserPublickey } from "@/models/entities/user-publickey.js";
 import { verifySignature } from "@/remote/activitypub/check-fetch.js";
 import { inspect } from "node:util";
+import { consumeInboxQuota } from "@/misc/inbox-rate-limit.js";
 
 const logger = new Logger("inbox");
+
+type AuthUser = {
+	user: CacheableRemoteUser;
+	key: UserPublickey | null;
+};
+
+/** Host de una URI, o null si no es válida (no lanza). */
+function safeHost(uri: string): string | null {
+	try {
+		return extractHost(uri);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Usuario remoto ya conocido en la BD para un actor, sin tocar la red.
+ */
+async function getKnownAuthUser(
+	dbResolver: DbResolver,
+	actorUri: string,
+): Promise<AuthUser | null> {
+	const user = await dbResolver.getUserFromApId(actorUri);
+	if (user == null || user.host == null) return null;
+
+	const key = await UserPublickeys.findOneBy({ userId: user.id });
+	return { user: user as CacheableRemoteUser, key };
+}
 
 // Processing when an activity arrives in the user's inbox
 export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
@@ -58,67 +87,78 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 		return `Old keyId is no longer supported. ${keyIdLower}`;
 	}
 
+	let actorUri: string;
+	try {
+		actorUri = getApId(activity.actor);
+	} catch {
+		return `skip: invalid activity.actor`;
+	}
+	const actorHost = safeHost(actorUri);
+
 	const dbResolver = new DbResolver();
 
 	// HTTP-Signature keyId from DB
-	let authUser: {
-		user: CacheableRemoteUser;
-		key: UserPublickey | null;
-	} | null = await dbResolver.getAuthUserFromKeyId(signature.keyId);
+	let authUser: AuthUser | null = await dbResolver.getAuthUserFromKeyId(
+		signature.keyId,
+	);
 
 	// keyIdでわからなければ、activity.actorを元にDBから取得 || activity.actorを元にリモートから取得
+	// ただし actor のホストが keyId のホストと一致しない場合 (リレー等) は、署名検証の前に
+	// actor をリモートから取得しない。DB にある場合のみ使い、そうでなければ LD-Signature に任せる。
 	if (authUser == null) {
-		try {
-			authUser = await dbResolver.getAuthUserFromApId(getApId(activity.actor));
-		} catch (e) {
-			// Skip if target is 4xx
-			if (e instanceof StatusError) {
-				if (!e.isRetryable) {
-					return `skip: Ignored deleted actors on both ends ${activity.actor} - ${e.statusCode}`;
+		if (actorHost === host) {
+			try {
+				authUser = await dbResolver.getAuthUserFromApId(actorUri);
+			} catch (e) {
+				// Skip if target is 4xx
+				if (e instanceof StatusError) {
+					if (!e.isRetryable) {
+						return `skip: Ignored deleted actors on both ends ${activity.actor} - ${e.statusCode}`;
+					}
+					throw new Error(`Error in actor ${activity.actor}\n${inspect(e)}`);
 				}
-				throw new Error(`Error in actor ${activity.actor}\n${inspect(e)}`);
 			}
+		} else {
+			authUser = await getKnownAuthUser(dbResolver, actorUri);
 		}
 	}
 
-	// それでもわからなければ終了
-	if (authUser == null) {
-		return "skip: failed to resolve user";
-	}
-
 	// publicKey がなくても終了
-	if (authUser.key == null) {
+	if (authUser != null && authUser.key == null) {
 		return "skip: failed to resolve user publicKey";
 	}
 
 	// HTTP-Signatureの検証
-	let httpSignatureValidated = httpSignature.verifySignature(
-		signature,
-		authUser.key.keyPem,
-	);
-
-	// If signature validation failed, try refetching the actor
-	if (!httpSignatureValidated) {
-		authUser.key = await dbResolver.refetchPublicKeyForApId(authUser.user);
-
-		if (authUser.key == null) {
-			return "skip: failed to re-resolve user publicKey";
-		}
-
+	let httpSignatureValidated = false;
+	if (authUser?.key != null) {
 		httpSignatureValidated = httpSignature.verifySignature(
 			signature,
 			authUser.key.keyPem,
 		);
-	}
 
-	if (httpSignatureValidated) {
-		if (!verifySignature(signature, authUser.key)) {
-			return "skip: Invalid HTTP signature";
+		// If signature validation failed, try refetching the actor
+		if (!httpSignatureValidated) {
+			authUser.key = await dbResolver.refetchPublicKeyForApId(authUser.user);
+
+			if (authUser.key == null) {
+				return "skip: failed to re-resolve user publicKey";
+			}
+
+			httpSignatureValidated = httpSignature.verifySignature(
+				signature,
+				authUser.key.keyPem,
+			);
+		}
+
+		if (httpSignatureValidated) {
+			if (!verifySignature(signature, authUser.key)) {
+				return "skip: Invalid HTTP signature";
+			}
 		}
 	}
 
 	// また、signatureのsignerは、activity.actorと一致する必要がある
-	if (!httpSignatureValidated || authUser.user.uri !== activity.actor) {
+	if (!httpSignatureValidated || authUser?.user.uri !== activity.actor) {
 		// 一致しなくても、でもLD-Signatureがありそうならそっちも見る
 		if (activity.signature) {
 			if (activity.signature.type !== "RsaSignature2017") {
@@ -127,15 +167,23 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 
 			// activity.signature.creator: https://example.oom/users/user#main-key
 			// みたいになっててUserを引っ張れば公開キーも入ることを期待する
-			if (activity.signature.creator) {
-				const candicate = activity.signature.creator.replace(/#.*/, "");
-				await resolvePerson(candicate).catch(() => null);
+			const creator = activity.signature.creator;
+
+			// creator はこの後、署名検証の前に fetch する。そのため creator のホストは
+			// activity.actor のホストと一致している必要がある (任意の URL を取得させない)。
+			if (
+				typeof creator !== "string" ||
+				actorHost == null ||
+				safeHost(creator) !== actorHost
+			) {
+				return "skip: LD-Signature creator host does not match activity.actor";
 			}
 
+			const candicate = creator.replace(/#.*/, "");
+			await resolvePerson(candicate).catch(() => null);
+
 			// keyIdからLD-Signatureのユーザーを取得
-			authUser = await dbResolver.getAuthUserFromKeyId(
-				activity.signature.creator,
-			);
+			authUser = await dbResolver.getAuthUserFromKeyId(creator);
 			if (authUser == null) {
 				return "skip: LD-Signatureのユーザーが取得できませんでした";
 			}
@@ -170,6 +218,11 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 		}
 	}
 
+	// ここまでで署名者(authUser)が確定している
+	if (authUser == null) {
+		return "skip: failed to resolve user";
+	}
+
 	// activity.idがあればホストが署名者のホストであることを確認する
 	if (typeof activity.id === "string") {
 		const signerHost = extractHost(authUser.user.uri!);
@@ -177,6 +230,12 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 		if (signerHost !== activityIdHost) {
 			return `skip: signerHost(${signerHost}) !== activity.id host(${activityIdHost}`;
 		}
+	}
+
+	// 署名が検証された actor のホストごとにレート制限 (未検証の keyId は偽装できるため対象外)
+	const quotaHost = extractHost(authUser.user.uri!);
+	if (!(await consumeInboxQuota(quotaHost))) {
+		return `skip: rate limited ${quotaHost}`;
 	}
 
 	// Update stats

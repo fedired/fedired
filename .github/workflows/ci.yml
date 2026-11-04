@@ -136,6 +136,11 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=3072
         run: pnpm run build
 
+      # Pruebas de seguridad de federación (sin servicios): guard SSRF para
+      # peticiones salientes de ActivityPub. Se ejecutan sobre el build compilado.
+      - name: Pruebas de federación (guard SSRF)
+        run: node --test packages/backend/built/misc/ssrf-guard.test.js
+
       # Compila las pruebas de Rust sin ejecutarlas (no requiere servicios)
       - name: Compile Rust tests
         run: cargo test --workspace --no-run
