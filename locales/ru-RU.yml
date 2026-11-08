@@ -979,8 +979,7 @@ _registry:
   domain: "Домен"
   createKey: "Новый ключ"
 _aboutFedired:
-  about: "fedired это форк fedired, сделанный ThatOneCalculator, разработка которого
-    началась с 2022."
+  about: "Fedired — это федеративная социальная сеть, созданная Javier Caceres и развиваемая с 2023 года."
   contributors: "Основные соавторы"
   allContributors: "Все соавторы"
   source: "Исходный код"

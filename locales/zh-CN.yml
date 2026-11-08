@@ -997,7 +997,7 @@ _registry:
   domain: "域"
   createKey: "创建键"
 _aboutFedired:
-  about: "fedired 是由 ThatOneCalculator 创建的 Misskey 的一个分支，自 2022 年开始开发。"
+  about: "Fedired 是由 Javier Caceres 创建的联邦社交网络，自 2023 年开始开发。"
   contributors: "主要贡献者"
   allContributors: "全体贡献者"
   source: "源代码"

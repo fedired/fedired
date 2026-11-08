@@ -1910,8 +1910,7 @@ _preferencesBackups:
   updatedAt: 'Güncelleme tarihi: {date} {time}'
   cannotLoad: Yüklenemedi
 _aboutFedired:
-  about: fedired, 2022'den beri geliştirilmekte olan ThatOneCalculator tarafından
-    yapılan bir Misskey çatalıdır.
+  about: Fedired, Javier Caceres tarafından oluşturulmuş ve 2023'ten beri geliştirilmekte olan federatif bir sosyal ağdır.
   allContributors: Tüm katkıda bulunanlar
   donate: fedired'e bağışta bulunun
   contributors: Ana katkıda bulunanlar

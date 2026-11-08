@@ -991,8 +991,7 @@ _registry:
   domain: "Domaine"
   createKey: "Créer une clé"
 _aboutFedired:
-  about: "fedired est une fourche de Misskey, un logiciel libre et ouvert, développé
-    depuis 2022."
+  about: "Fedired est un réseau social fédéré créé par Javier Caceres, en développement depuis 2023."
   contributors: "Principaux contributeurs"
   allContributors: "Tous les contributeurs"
   source: "Code source"

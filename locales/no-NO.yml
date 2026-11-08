@@ -993,7 +993,7 @@ _aboutFedired:
   misskeyContributors: Misskeys bidragsytere
   pleaseDonateToHost: Du kan også vurdere å donere til hjemme-tjeneren din, {host},
     for å hjelpe dem med driftskostnadene for tjenesten.
-  about: fedired ble opprettet av ThatOneCalculator i 2022, basert på Misskey.
+  about: Fedired er et federert sosialt nettverk laget av Javier Caceres, under utvikling siden 2023.
 isBot: Denne kontoen er en bot
 _nsfw:
   respect: Skjul NSFW-merket media

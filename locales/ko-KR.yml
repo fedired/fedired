@@ -987,7 +987,7 @@ _registry:
   domain: "도메인"
   createKey: "키 생성"
 _aboutFedired:
-  about: "fedired는 ThatOneCalculator에 의해서 2022년부터 개발되어 온 Misskey의 포크 소프트웨어 입니다."
+  about: "Fedired는 Javier Caceres가 만든 연합형 소셜 네트워크로, 2023년부터 개발되고 있습니다."
   contributors: "주요 기여자"
   allContributors: "모든 기여자"
   source: "소스 코드"

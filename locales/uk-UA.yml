@@ -818,8 +818,7 @@ _registry:
   createKey: "Створити ключ"
   scope: Область
 _aboutFedired:
-  about: "fedired - це форк Misskey з відкритим кодом, яке розробляє ThatOneCalculator
-    з 2022 року."
+  about: "Fedired — це федеративна соціальна мережа, створена Javier Caceres, яка розвивається з 2023 року."
   contributors: "Головні помічники"
   allContributors: "Всі помічники"
   source: "Вихідний код"

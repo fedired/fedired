@@ -1106,7 +1106,7 @@ _registry:
   domain: "ドメイン"
   createKey: "キーを作成"
 _aboutFedired:
-  about: "fediredは、2022年に生まれたThatOneCalculatorによるMisskeyのforkです。"
+  about: "Fediredは、Javier Caceresによって作られた分散型SNSで、2023年から開発されています。"
   contributors: "主なコントリビューター"
   allContributors: "全てのコントリビューター"
   misskeyContributors: "フォーク元のMisskeyの主なコントリビューター"

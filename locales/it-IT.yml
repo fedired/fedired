@@ -927,8 +927,7 @@ _registry:
   createKey: "Crea chiave"
   scope: Ambito
 _aboutFedired:
-  about: "fedired è un fork di Misskey creato da ThatOneCalculator, che è in sviluppo
-    dal 2022."
+  about: "Fedired è un social network federato creato da Javier Caceres, in sviluppo dal 2023."
   contributors: "Principali collaboratori"
   allContributors: "Tutti i collaboratori"
   source: "Codice sorgente"

@@ -1181,7 +1181,7 @@ _registry:
   domain: "Dominio"
   createKey: "Crear una llave"
 _aboutFedired:
-  about: "Fedired es una bifurcación de Misskey creada por ThatOneCalculator, que ha estado en desarrollo desde el 2022."
+  about: "Fedired es una red social federada creada por Javier Caceres, que ha estado en desarrollo desde el 2023."
   contributors: "Principales colaboradores"
   allContributors: "Todos los colaboradores"
   misskeyContributors: "Contribuidores de Misskey"

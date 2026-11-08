@@ -983,8 +983,7 @@ _registry:
   domain: "Domena"
   createKey: "Utwórz klucz"
 _aboutFedired:
-  about: "fedired jest forkiem Misskey utworzonym przez ThatOneCalculator, rozwijanym
-    od 2022."
+  about: "Fedired to sfederowana sieć społecznościowa stworzona przez Javier Caceres, rozwijana od 2023 roku."
   contributors: "Główni twórcy"
   allContributors: "Wszyscy twórcy"
   source: "Kod źródłowy"
