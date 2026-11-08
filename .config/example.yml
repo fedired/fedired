@@ -174,7 +174,16 @@ maxLogLevel: info
 # Proxy para archivos remotos (por defecto: true)
 #proxyRemoteFiles: true
 
+# Redes privadas a las que SÍ se permite conectar (SSRF allowlist).
+# Obligatorio en despliegues LAN / hairpin DNS, donde el hostname público
+# resuelve a 192.168.x.x / 10.x / etc. Sin esto fallan:
+# - recorte de avatar/banner (proxy de medios)
+# - verificación de enlaces del perfil (rel=me)
+# - federación / contactar otras instancias si el DNS interno es privado
+# Ejemplo para una LAN típica (ajusta a tu subred):
 #allowedPrivateNetworks: [
+#  '192.168.0.0/16',
+#  '10.0.0.0/8',
 #  '127.0.0.1/32'
 #]
 

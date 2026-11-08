@@ -1,6 +1,5 @@
 import * as fs from "node:fs";
-import net from "node:net";
-import { promises } from "node:dns";
+import { promises as dnsPromises } from "node:dns";
 import type Koa from "koa";
 import sharp from "sharp";
 import type { IImage } from "@/services/drive/image-processor.js";
@@ -9,13 +8,16 @@ import { createTemp } from "@/misc/create-temp.js";
 import { downloadUrl } from "@/misc/download-url.js";
 import { detectType } from "@/misc/get-file-info.js";
 import { StatusError } from "@/misc/fetch.js";
+import { isPublicAddress } from "@/misc/ssrf-guard.js";
 import { FILE_TYPE_BROWSERSAFE, MINUTE } from "@/const.js";
 import { serverLogger } from "../index.js";
 import { isMimeImage } from "@/misc/is-mime-image.js";
 import { getIpHash } from "@/misc/get-ip-hash.js";
 import { limiter } from "@/server/api/limiter.js";
-import { IEndpointMeta } from "@/server/api/endpoints.js";
+import type { IEndpointMeta } from "@/server/api/endpoints.js";
 import { inspect } from "node:util";
+import { config } from "@/config.js";
+import { InternalStorage } from "@/services/drive/internal-storage.js";
 
 export async function proxyMedia(ctx: Koa.Context) {
 	let url = "url" in ctx.query ? ctx.query.url : `https://${ctx.params.url}`;
@@ -26,16 +28,22 @@ export async function proxyMedia(ctx: Koa.Context) {
 	}
 
 	// koa will automatically load the `X-Forwarded-For` header if `proxy: true` is configured in the app.
-	let limitActor: string;
-	limitActor = getIpHash(ctx.ip);
+	const limitActor = getIpHash(ctx.ip);
 
-	const parsedUrl = new URL(url);
+	let parsedUrl: URL;
+	try {
+		parsedUrl = new URL(url);
+	} catch {
+		ctx.status = 400;
+		ctx.body = { message: "Invalid URL" };
+		return;
+	}
 
 	const limit: IEndpointMeta["limit"] = {
 		key: `media-proxy:${parsedUrl.host}:${parsedUrl.pathname}`,
 		duration: MINUTE * 10,
-		max: 10
-	}
+		max: 10,
+	};
 
 	// Rate limit
 	await limiter(
@@ -50,50 +58,31 @@ export async function proxyMedia(ctx: Koa.Context) {
 		ctx.body = "Rate limit exceeded. " + remainingTime;
 	});
 
-	if (ctx.status == 429) return;
+	if (ctx.status === 429) return;
 
-
-	url = url.replace("//", "/");
-
-	const { hostname } = new URL(url);
-	let resolvedIps;
-	try {
-		resolvedIps = await promises.resolve(hostname);
-	} catch (error) {
-		ctx.status = 400;
-		ctx.body = { message: "Invalid URL" };
-		return;
-	}
-
-	const isSSRF = resolvedIps.some((ip) => {
-		if (net.isIPv4(ip)) {
-			const parts = ip.split(".").map(Number);
-			return (
-				parts[0] === 10 ||
-				(parts[0] === 172 && parts[1] >= 16 && parts[1] < 32) ||
-				(parts[0] === 192 && parts[1] === 168) ||
-				parts[0] === 127 ||
-				parts[0] === 0
-			);
-		} else if (net.isIPv6(ip)) {
-			return (
-				ip.startsWith("::") || ip.startsWith("fc00:") || ip.startsWith("fe80:")
-			);
-		}
-		return false;
-	});
-
-	if (isSSRF) {
-		ctx.status = 400;
-		ctx.body = { message: "Access to this URL is not allowed" };
-		return;
-	}
-
-	// Create temp file
+	// Create temp file (or copy a local drive file into it)
 	const [path, cleanup] = await createTemp();
 
 	try {
-		await downloadUrl(url, path);
+		const localKey = localDriveFileKey(parsedUrl);
+		if (localKey != null) {
+			// Misma instancia: leer del disco. Evita un fetch HTTP al propio host
+			// (en LAN el hostname suele resolver a 192.168.x.x y el SSRF lo bloquea).
+			const localPath = InternalStorage.resolvePath(localKey);
+			try {
+				await fs.promises.copyFile(localPath, path);
+			} catch (err) {
+				if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+					throw new StatusError("File not found", 404);
+				}
+				throw err;
+			}
+		} else {
+			await assertProxyTargetAllowed(parsedUrl);
+			// Compat: el código histórico normalizaba dobles barras en el path.
+			url = url.replace("//", "/");
+			await downloadUrl(url, path);
+		}
 
 		const { mime, ext } = await detectType(path);
 		const isConvertibleImage = isMimeImage(mime, "sharp-convertible-image");
@@ -172,5 +161,45 @@ export async function proxyMedia(ctx: Koa.Context) {
 		}
 	} finally {
 		cleanup();
+	}
+}
+
+/**
+ * Si la URL apunta a un archivo de esta instancia (`/files/<key>`),
+ * devuelve la key; si no, `null`.
+ */
+function localDriveFileKey(parsedUrl: URL): string | null {
+	const ownHost =
+		parsedUrl.hostname === config.hostname || parsedUrl.host === config.host;
+	if (!ownHost) return null;
+
+	const match = parsedUrl.pathname.match(/^\/files\/([^/]+)$/);
+	if (match == null) return null;
+
+	const key = match[1];
+	// Evitar path traversal; las keys del drive no llevan `/` ni `..`.
+	if (key.includes("..") || key.includes("\\") || key.includes("/")) {
+		return null;
+	}
+	return key;
+}
+
+/**
+ * Resuelve el host y rechaza IPs privadas/reservadas, salvo las de
+ * `allowedPrivateNetworks` (necesario en despliegues LAN / hairpin DNS).
+ */
+async function assertProxyTargetAllowed(parsedUrl: URL): Promise<void> {
+	const hostname = parsedUrl.hostname.replace(/^\[(.*)\]$/, "$1");
+	let resolvedIps: string[];
+	try {
+		resolvedIps = await dnsPromises.resolve(hostname);
+	} catch {
+		throw new StatusError("Invalid URL", 400);
+	}
+
+	const allowed = config.allowedPrivateNetworks || [];
+	const blocked = resolvedIps.some((ip) => !isPublicAddress(ip, allowed));
+	if (blocked) {
+		throw new StatusError("Access to this URL is not allowed", 400);
 	}
 }

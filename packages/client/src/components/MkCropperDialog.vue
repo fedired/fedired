@@ -59,9 +59,13 @@ const props = defineProps<{
 	aspectRatio: number;
 }>();
 
-const imgUrl = `${url}/proxy/image.webp?${query({
-	url: props.file.url,
-})}`;
+// Archivos de esta instancia: URL directa. El proxy vuelve a descargar por HTTP
+// y en LAN (el hostname resuelve a 192.168.x.x) el guard SSRF lo bloquea.
+const imgUrl = props.file.url.startsWith(url)
+	? props.file.url
+	: `${url}/proxy/image.webp?${query({
+			url: props.file.url,
+		})}`;
 const dialogEl = ref<InstanceType<typeof XModalWindow>>();
 const imgEl = ref<HTMLImageElement>();
 let cropper: Cropper | null = null;
