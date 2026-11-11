@@ -83,7 +83,7 @@
 		"node-fetch": "3.3.2",
 		"nodemailer": "6.9.14",
 		"otpauth": "9.3.2",
-		"parse5": "7.1.2",
+		"parse5": "8.1.1",
 		"pg": "8.12.0",
 		"private-ip": "3.0.2",
 		"probe-image-size": "7.2.3",
