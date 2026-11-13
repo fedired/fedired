@@ -233,7 +233,20 @@ sudo nano /etc/caddy/Caddyfile
 
 ```Caddyfile
 tu-dominio.example.com {
-	reverse_proxy http://127.0.0.1:3000
+	# Timeouts largos: subida/procesado de imágenes (sharp) puede tardar.
+	# Sin esto, Cloudflare muestra 502 Bad gateway mientras el origen aún trabaja
+	# o cuando un worker se reinicia a mitad de la petición.
+	reverse_proxy http://127.0.0.1:3000 {
+		transport http {
+			read_timeout 5m
+			write_timeout 5m
+			dial_timeout 10s
+		}
+	}
+
+	request_body {
+		max_size 100MB
+	}
 
 	log {
 		output file /var/log/caddy/fedired.log

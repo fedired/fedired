@@ -70,12 +70,11 @@ cluster.on("online", (worker) => {
 	clusterLogger.debug(`Process is now online: [${worker.id}]`);
 });
 
-// Listen for dying workers
+// Solo log: el respawn con el modo correcto (web/queue) lo hace master.ts.
+// Hacer cluster.fork() aquí duplicaba workers sin `mode` y provocaba 502
+// (Cloudflare Bad gateway) al caer un worker durante subidas de imagen.
 cluster.on("exit", (worker) => {
-	// Replace the dead worker,
-	// we're not sentimental
 	clusterLogger.error(chalk.red(`[${worker.id}] died :(`));
-	cluster.fork();
 });
 
 // Display detail of unhandled promise rejection
