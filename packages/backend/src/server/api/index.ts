@@ -21,6 +21,36 @@ import verifyEmail from "./private/verify-email.js";
 // Init app
 const app = new Koa();
 
+// Error handling middleware to prevent connection resets and 502 Bad Gateway.
+// Siempre responder JSON: el cliente (upload / cropper) hace response.json()
+// y si Caddy/Node devuelve texto "Internal Server Error" rompe con
+// Unexpected token 'I'.
+app.use(async (ctx, next) => {
+	try {
+		await next();
+	} catch (err: any) {
+		console.error("API Error caught by top-level middleware:", err);
+		const isMulterLimit =
+			err?.code === "LIMIT_FILE_SIZE" || err?.code === "LIMIT_UNEXPECTED_FILE";
+		ctx.status = isMulterLimit
+			? 413
+			: err.status || err.statusCode || 500;
+		ctx.type = "application/json";
+		ctx.body = {
+			error: {
+				message: isMulterLimit
+					? "File too large."
+					: err.message || "Internal server error",
+				code: err.code || "INTERNAL_ERROR",
+				id: isMulterLimit
+					? "d08dbc37-a6a9-463a-8c47-96c32ab5f064"
+					: "5d37dbcb-891e-41ca-a3d6-e690c97775ac",
+				kind: isMulterLimit ? "client" : "server",
+			},
+		};
+	}
+});
+
 app.use(
 	cors({
 		origin: "*",

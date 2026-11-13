@@ -211,8 +211,8 @@ async function save(
 		file.thumbnailUrl = thumbnailUrl;
 		file.webpublicUrl = webpublicUrl;
 		file.accessKey = accessKey;
-		file.thumbnailAccessKey = thumbnailAccessKey;
-		file.webpublicAccessKey = webpublicAccessKey;
+		file.thumbnailAccessKey = alts.thumbnail ? thumbnailAccessKey : null;
+		file.webpublicAccessKey = alts.webpublic ? webpublicAccessKey : null;
 		file.webpublicType = alts.webpublic?.type ?? null;
 		file.name = name;
 		file.type = type;
@@ -270,12 +270,19 @@ export async function generateAlts(
 	}
 
 	let img: sharp.Sharp | null = null;
-	let satisfyWebpublic: boolean;
+	let satisfyWebpublic = false;
+	let webpublic: IImage | null = null;
+	let thumbnail: IImage | null = null;
 
 	try {
-		img = sharp(path);
+		// failOn:'none' evita crashes con metadatos corruptos;
+		// destroy() al final evita fugas de memoria que tumban el worker (502 / Internal Server Error).
+		img = sharp(path, {
+			failOn: "none",
+			limitInputPixels: 268402689,
+		});
 		const metadata = await img.metadata();
-		const isAnimated = metadata.pages && metadata.pages > 1;
+		const isAnimated = !!(metadata.pages && metadata.pages > 1);
 
 		// skip animated
 		if (isAnimated) {
@@ -299,63 +306,69 @@ export async function generateAlts(
 			metadata.height &&
 			metadata.height <= 2048
 		);
+
+		// #region webpublic
+		if (generateWeb && !satisfyWebpublic) {
+			logger.info("creating web image");
+
+			try {
+				if (["image/jpeg"].includes(type)) {
+					webpublic = await convertSharpToWebp(img.clone(), 2048, 2048);
+				} else if (["image/webp"].includes(type)) {
+					webpublic = await convertSharpToWebp(img.clone(), 2048, 2048);
+				} else if (["image/png"].includes(type)) {
+					webpublic = await convertSharpToWebp(img.clone(), 2048, 2048, 100);
+				} else if (["image/svg+xml"].includes(type)) {
+					webpublic = await convertSharpToWebp(img.clone(), 2048, 2048);
+				} else {
+					logger.debug("web image not created (not an required image)");
+				}
+			} catch (err) {
+				logger.warn(
+					`web image not created (an error occured):\n${inspect(err)}`,
+				);
+			}
+		} else if (satisfyWebpublic) {
+			logger.info("web image not created (original satisfies webpublic)");
+		} else {
+			logger.info("web image not created (from remote)");
+		}
+		// #endregion webpublic
+
+		// #region thumbnail
+		try {
+			if (
+				[
+					"image/jpeg",
+					"image/webp",
+					"image/png",
+					"image/svg+xml",
+					"image/avif",
+				].includes(type)
+			) {
+				thumbnail = await convertSharpToWebp(img.clone(), 996, 560);
+			} else {
+				logger.debug("thumbnail not created (not an required file)");
+			}
+		} catch (err) {
+			logger.warn(
+				`thumbnail not created (an error occured):\n${inspect(err)}`,
+			);
+		}
+		// #endregion thumbnail
 	} catch (err) {
 		logger.warn(`sharp failed:\n${inspect(err)}`);
 		return {
 			webpublic: null,
 			thumbnail: null,
 		};
-	}
-
-	// #region webpublic
-	let webpublic: IImage | null = null;
-
-	if (generateWeb && !satisfyWebpublic) {
-		logger.info("creating web image");
-
+	} finally {
 		try {
-			if (["image/jpeg"].includes(type)) {
-				webpublic = await convertSharpToWebp(img, 2048, 2048);
-			} else if (["image/webp"].includes(type)) {
-				webpublic = await convertSharpToWebp(img, 2048, 2048);
-			} else if (["image/png"].includes(type)) {
-				webpublic = await convertSharpToWebp(img, 2048, 2048, 100);
-			} else if (["image/svg+xml"].includes(type)) {
-				webpublic = await convertSharpToWebp(img, 2048, 2048);
-			} else {
-				logger.debug("web image not created (not an required image)");
-			}
-		} catch (err) {
-			logger.warn(`web image not created (an error occured):\n${inspect(err)}`);
+			img?.destroy();
+		} catch {
+			// ignore
 		}
-	} else {
-		if (satisfyWebpublic)
-			logger.info("web image not created (original satisfies webpublic)");
-		else logger.info("web image not created (from remote)");
 	}
-	// #endregion webpublic
-
-	// #region thumbnail
-	let thumbnail: IImage | null = null;
-
-	try {
-		if (
-			[
-				"image/jpeg",
-				"image/webp",
-				"image/png",
-				"image/svg+xml",
-				"image/avif",
-			].includes(type)
-		) {
-			thumbnail = await convertSharpToWebp(img, 996, 560);
-		} else {
-			logger.debug("thumbnail not created (not an required file)");
-		}
-	} catch (err) {
-		logger.warn(`thumbnail not created (an error occured):\n${inspect(err)}`);
-	}
-	// #endregion thumbnail
 
 	return {
 		webpublic,
@@ -611,7 +624,8 @@ export async function addFile({
 	file.usageHint = usageHint;
 	file.isSensitive = user
 		? Users.isLocalUser(user) &&
-			(instanceMeta!.markLocalFilesNsfwByDefault || profile!.alwaysMarkNsfw)
+			(instanceMeta?.markLocalFilesNsfwByDefault ||
+				profile?.alwaysMarkNsfw)
 			? true
 			: sensitive != null
 				? sensitive
@@ -674,11 +688,17 @@ export async function addFile({
 	logger.info(`drive file has been created ${file.id}`);
 
 	if (user != null) {
-		DriveFiles.pack(file, { self: true }).then((packedFile) => {
-			// Publish driveFileCreated event
-			publishToMainStream(user.id, Event.DriveFile, packedFile);
-			publishToDriveFileStream(user.id, "create", toRustObject(file));
-		});
+		DriveFiles.pack(file, { self: true })
+			.then((packedFile) => {
+				// Publish driveFileCreated event
+				publishToMainStream(user.id, Event.DriveFile, packedFile);
+				publishToDriveFileStream(user.id, "create", toRustObject(file)).catch((err) => {
+					logger.warn(`Failed to publishToDriveFileStream: ${err}`);
+				});
+			})
+			.catch((err) => {
+				logger.warn(`Failed to pack or publish drive file: ${err}`);
+			});
 	}
 
 	return file;

@@ -22,6 +22,24 @@ const apiClient = new fedireddApi.APIClient({
 	origin: url,
 });
 
+/** Parse API bodies safely when the proxy returns plain text (e.g. "Internal Server Error"). */
+async function parseApiResponse(res: Response): Promise<any> {
+	const text = await res.text();
+	if (!text) return null;
+	try {
+		return JSON.parse(text);
+	} catch {
+		return {
+			error: {
+				message: `Error del servidor (${res.status}): ${text.slice(0, 200)}`,
+				code: "NON_JSON_RESPONSE",
+				id: "5d37dbcb-891e-41ca-a3d6-e690c97775ac",
+				kind: "server",
+			},
+		};
+	}
+}
+
 export const api = ((
 	endpoint: string,
 	data: Record<string, unknown> = {},
@@ -51,14 +69,15 @@ export const api = ((
 			},
 		})
 			.then(async (res) => {
-				const body = res.status === 204 ? null : await res.json();
+				const body =
+					res.status === 204 ? null : await parseApiResponse(res);
 
 				if (res.status === 200) {
 					resolve(body);
 				} else if (res.status === 204) {
 					resolve(undefined);
 				} else {
-					reject(body.error);
+					reject(body?.error ?? body);
 				}
 			})
 			.catch(reject);
@@ -96,14 +115,15 @@ export const apiGet = ((
 			headers: authorization ? { authorization } : {},
 		})
 			.then(async (res) => {
-				const body = res.status === 204 ? null : await res.json();
+				const body =
+					res.status === 204 ? null : await parseApiResponse(res);
 
 				if (res.status === 200) {
 					resolve(body);
 				} else if (res.status === 204) {
 					resolve(undefined);
 				} else {
-					reject(body.error);
+					reject(body?.error ?? body);
 				}
 			})
 			.catch(reject);

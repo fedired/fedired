@@ -16,29 +16,46 @@ export async function convertToWebp(
 	height: number,
 	quality = 85,
 ): Promise<IImage> {
-	return convertSharpToWebp(await sharp(path), width, height, quality);
+	return convertSharpToWebp(
+		sharp(path, {
+			failOn: "none",
+			limitInputPixels: 268402689,
+		}),
+		width,
+		height,
+		quality,
+	);
 }
 
 export async function convertSharpToWebp(
-	sharp: sharp.Sharp,
+	instance: sharp.Sharp,
 	width: number,
 	height: number,
 	quality = 85,
 ): Promise<IImage> {
-	const data = await sharp
-		.resize(width, height, {
-			fit: "inside",
-			withoutEnlargement: true,
-		})
-		.rotate()
-		.webp({
-			quality,
-		})
-		.toBuffer();
+	try {
+		const data = await instance
+			.resize(width, height, {
+				fit: "inside",
+				withoutEnlargement: true,
+			})
+			.rotate()
+			.webp({
+				quality,
+			})
+			.toBuffer();
 
-	return {
-		data,
-		ext: "webp",
-		type: "image/webp",
-	};
+		return {
+			data,
+			ext: "webp",
+			type: "image/webp",
+		};
+	} finally {
+		// Liberar memoria nativa de libvips; sin esto el worker puede OOM al subir varias fotos.
+		try {
+			instance.destroy();
+		} catch {
+			// ignore
+		}
+	}
 }

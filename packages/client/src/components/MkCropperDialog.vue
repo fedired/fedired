@@ -26,6 +26,7 @@
 					<img
 						ref="imgEl"
 						:src="imgUrl"
+						crossorigin="anonymous"
 						style="display: none"
 						@load="onImageLoad"
 					/>
@@ -42,10 +43,10 @@ import Cropper from "cropperjs";
 import tinycolor from "tinycolor2";
 import XModalWindow from "@/components/MkModalWindow.vue";
 import * as os from "@/os";
-import { me } from "@/me";
 import { defaultStore } from "@/store";
-import { apiUrl, url } from "@/config";
+import { url } from "@/config";
 import { query } from "@/scripts/url";
+import { uploadFile } from "@/scripts/upload";
 import { i18n } from "@/i18n";
 
 const emit = defineEmits<{
@@ -74,31 +75,30 @@ const loading = ref(true);
 const ok = async () => {
 	async function UploadCroppedImg(): Promise<entities.DriveFile> {
 		const croppedCanvas = await cropper?.getCropperSelection()?.$toCanvas();
+		if (croppedCanvas == null) {
+			throw new Error("Cropping image failed.");
+		}
 
 		const blob = await new Promise<Blob | null>((resolve) =>
-			croppedCanvas!.toBlob((blob) => resolve(blob)),
+			croppedCanvas.toBlob((b) => resolve(b), "image/webp", 0.92),
 		);
 
-		// MDN says `null` may be passed if the image cannot be created for any reason.
-		// But I don't think this is reachable for normal case.
 		if (blob == null) {
-			throw "Cropping image failed.";
+			throw new Error("Cropping image failed.");
 		}
 
-		const formData = new FormData();
-		formData.append("file", blob);
-		if (defaultStore.state.uploadFolder) {
-			formData.append("folderId", defaultStore.state.uploadFolder);
-		}
-
-		const response = await fetch(`${apiUrl}/drive/files/create`, {
-			method: "POST",
-			body: formData,
-			headers: {
-				authorization: `Bearer ${me!.token}`,
-			},
+		const baseName = (props.file.name || "image").replace(/\.[^.]+$/, "");
+		const file = new File([blob], `${baseName}.webp`, {
+			type: "image/webp",
 		});
-		return await response.json();
+
+		// keepOriginal=true: ya viene recortada; evita otra compresión en el cliente.
+		return await uploadFile(
+			file,
+			defaultStore.state.uploadFolder,
+			file.name,
+			true,
+		);
 	}
 
 	const promise = UploadCroppedImg();
