@@ -316,7 +316,9 @@ RestrictRealtime=true
 RestrictSUIDSGID=true
 SecureBits=noroot-locked
 SystemCallArchitectures=native
-SystemCallFilter=~@chown @clock @cpu-emulation @debug @ipc @keyring @memlock @module @mount @obsolete @privileged @raw-io @reboot @resources @setuid @swap
+# No denegar @memlock ni @resources: sharp/libvips los necesita.
+# Si se bloquean, el worker muere con SIGSYS al subir imágenes → Cloudflare 502.
+SystemCallFilter=~@chown @clock @cpu-emulation @debug @ipc @keyring @module @mount @obsolete @privileged @raw-io @reboot @setuid @swap
 SystemCallFilter=capset pipe pipe2 setpriority
 
 [Install]
