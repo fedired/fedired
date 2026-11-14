@@ -32,6 +32,8 @@ export const getBuiltinThemes = () =>
 			"l-vivid",
 			"l-cherry",
 			"l-sushi",
+			"l-tangerine",
+			"l-tangerine-orange",
 			"l-u0",
 
 			"d-rosepine",
@@ -49,6 +51,8 @@ export const getBuiltinThemes = () =>
 			"d-green-orange",
 			"d-cherry",
 			"d-ice",
+			"d-tangerine",
+			"d-tangerine-orange",
 			"d-u0",
 		].map((name) =>
 			import(`../themes/${name}.json5`).then(
