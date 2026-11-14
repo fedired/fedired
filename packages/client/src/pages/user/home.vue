@@ -616,9 +616,9 @@ onUnmounted(() => {
 
 					> .actions {
 						position: absolute;
-						inset-block-start: 6px;
-						inset-inline-end: 12px;
-						padding: 8px;
+						inset-block-start: 10px;
+						inset-inline-end: 16px;
+						padding: 0;
 						border-radius: 999px;
 						display: flex;
 						justify-content: center;
@@ -626,8 +626,13 @@ onUnmounted(() => {
 						gap: 8px;
 
 						:deep(button),
-						:deep(.mk-button) {
+						:deep(.mk-button),
+						:deep(.follow-button) {
 							border-radius: 999px !important;
+							min-block-size: 36px !important;
+							padding-block: 6px !important;
+							padding-inline: 16px !important;
+							font-weight: 700 !important;
 						}
 					}
 
@@ -731,17 +736,18 @@ onUnmounted(() => {
 					inline-size: 120px;
 					block-size: 120px;
 					border-radius: 50%;
-					border: 4px solid var(--panel);
+					border: 4px solid var(--bg);
 					overflow: hidden;
-					box-shadow: 0 2px 8px rgba(#000, 0.18);
+					box-shadow: none;
 				}
 
 				> .description {
 					padding-block-start: 72px;
-					padding-inline-end: 12px;
-					padding-block-end: 2px;
+					padding-inline-end: 16px;
+					padding-block-end: 8px;
 					padding-inline-start: 24px;
 					font-size: 0.95em;
+					line-height: 1.45;
 					inset-block-start: -65px;
 					position: relative;
 
@@ -842,7 +848,8 @@ onUnmounted(() => {
 		> .main {
 			> .profile > .main {
 				> .banner-container {
-					block-size: 140px;
+					block-size: 120px;
+					border-radius: 0;
 
 					> .fade {
 						display: none;
@@ -855,52 +862,117 @@ onUnmounted(() => {
 
 				> .title {
 					display: block;
+					text-align: start;
 					border-block-end: 0;
-					padding-block-end: 0;
+					padding: 56px 16px 8px;
+					font-weight: 700;
+
+					> .nameColumn > .name {
+						font-size: 1.35em;
+						text-shadow: none;
+						line-height: 1.25;
+					}
+
 					> .bottom {
+						margin-block-start: 2px;
+						opacity: 0.75;
+						font-weight: 400;
+
 						> .username {
 							margin-inline-end: 0;
+							font-size: 0.9em;
 						}
 					}
 				}
 
 				> .avatar {
-					inset-block-start: 90px;
-					inset-inline-start: 0;
-					inset-inline-end: 0;
-					inline-size: 92px;
-					block-size: 92px;
-					margin: auto;
+					inset-block-start: 72px;
+					inset-inline-start: 12px;
+					inset-inline-end: auto;
+					inline-size: 88px;
+					block-size: 88px;
+					margin: 0;
+					border-radius: 50%;
+					border: 3px solid var(--bg);
+					box-shadow: none;
 				}
 
 				> .description {
-					padding: 16px;
-					text-align: center;
+					padding: 8px 16px 12px;
+					text-align: start;
+					inset-block-start: 0;
+					position: relative;
+					font-size: 0.95em;
+					line-height: 1.45;
 				}
 
 				> .fields {
-					padding: 16px;
+					padding: 0 16px 12px;
+					border-block-start: none;
+
+					> .field {
+						background: var(--buttonBg);
+						border-radius: 10px;
+						padding: 8px 10px;
+						margin-block-end: 6px !important;
+
+						> .name {
+							inline-size: 34%;
+							text-align: start;
+							font-size: 0.8em;
+							opacity: 0.75;
+						}
+
+						> .value {
+							inline-size: 66%;
+							font-size: 0.9em;
+						}
+					}
 				}
 
 				> .status {
-					padding: 16px;
-				}
+					padding: 4px 16px 16px;
+					border-block-start: none;
+					justify-content: flex-start;
+					gap: 16px;
 
-				> .description {
-					inset-block-start: 0;
-					position: relative;
+					> a {
+						padding-inline-end: 0;
+					}
 				}
 
 				> .follow-container {
 					overflow: visible !important;
-					display: flex;
-					justify-content: center;
-					block-size: auto;
-					border-block-end: 1px solid var(--divider);
-					padding-block-end: 5px;
+					display: block;
+					block-size: 0;
+					border: none;
+					padding: 0;
+					position: relative;
+					z-index: 5;
+
 					> .actions {
-						position: static;
+						position: absolute;
+						inset-block-start: 8px;
+						inset-inline-end: 12px;
+						inset-inline-start: auto;
+						padding: 0;
+						gap: 6px;
+
+						:deep(.follow-button),
+						:deep(.koudoku),
+						:deep(button) {
+							border-radius: 999px !important;
+							min-block-size: 36px !important;
+							padding-block: 6px !important;
+							padding-inline: 14px !important;
+							font-size: 0.9em !important;
+							font-weight: 700 !important;
+						}
 					}
+				}
+
+				> .sponsor-badge {
+					margin-inline-start: 16px;
 				}
 			}
 

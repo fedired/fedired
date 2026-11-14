@@ -85,13 +85,11 @@ const headerTabs = computed(() =>
 		? [
 				{
 					key: "home",
-					title: i18n.ts.overview,
-					icon: `${icon("ph-user")}`,
+					title: i18n.ts.notes,
 				},
 				{
 					key: "media",
 					title: i18n.ts.media,
-					icon: `${icon("ph-grid-four")}`,
 				},
 				...((isSignedIn(me) && me.id === user.value.id) ||
 				user.value.publicReactions
@@ -99,26 +97,6 @@ const headerTabs = computed(() =>
 							{
 								key: "reactions",
 								title: i18n.ts.reactions,
-								icon: `${icon("ph-smiley")}`,
-							},
-						]
-					: []),
-				...(user.value.instance == null
-					? [
-							{
-								key: "clips",
-								title: i18n.ts.clips,
-								icon: `${icon("ph-paperclip")}`,
-							},
-							{
-								key: "pages",
-								title: i18n.ts.pages,
-								icon: `${icon("ph-file-text ph-dir")}`,
-							},
-							{
-								key: "gallery",
-								title: i18n.ts.gallery,
-								icon: `${icon("ph-image-square")}`,
 							},
 						]
 					: []),

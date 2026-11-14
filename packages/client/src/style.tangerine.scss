@@ -104,12 +104,43 @@ a[href^="/tags/"] {
 	border-block-start: 1px solid var(--divider);
 }
 
-/* Profile */
+/* Profile — Tangerine/Mastodon */
+.ftskorzw > .main > .profile > .main {
+	background: var(--bg);
+	border-radius: 0 !important;
+	overflow: visible !important;
+}
+
 .ftskorzw > .main > .profile > .main > .avatar {
 	border-radius: 50% !important;
-	border: 4px solid var(--panel);
+	border: 3px solid var(--bg) !important;
 	overflow: hidden;
-	box-shadow: 0 0 0 1px var(--divider);
+	box-shadow: none !important;
+}
+
+.ftskorzw > .main > .profile > .main > .follow-container > .actions {
+	:deep(.follow-button),
+	:deep(.koudoku),
+	:deep(button) {
+		border-radius: 999px !important;
+		font-weight: 700 !important;
+		min-block-size: 36px !important;
+	}
+}
+
+/* Profile page tabs: underline, not black chip */
+.fdidabkb.tabs > .tabs > .tab {
+	background: transparent !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	opacity: 0.7;
+	font-weight: 600;
+
+	&.active {
+		opacity: 1;
+		color: var(--accent);
+		box-shadow: inset 0 -3px 0 var(--accent) !important;
+	}
 }
 
 .ftskorzw > .main > .profile > .main > .status {
