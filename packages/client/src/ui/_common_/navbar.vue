@@ -2,37 +2,26 @@
 	<header class="mvcprjjd sidebar" :class="{ iconOnly }">
 		<div class="body">
 			<div class="top">
-				<div
-					class="banner"
-					:user="me"
-					:style="{ backgroundImage: `url(${me.bannerUrl})` }"
-				></div>
-				<button
-					v-click-anime
-					v-tooltip.noDelay.right="
-						`${i18n.ts.account}: @${me.username}`
-					"
-					class="item _button account"
-					@click="openAccountMenu"
+				<MkA
+					v-tooltip.noDelay.right="instanceName"
+					class="brand"
+					to="/"
+					exact
 				>
-					<MkAvatar
-						:user="me"
-						class="icon"
-						disable-link
-					/><!-- <MkAcct class="text" :user="me"/> -->
-				</button>
+					<img class="logo" :src="instanceLogo" :alt="instanceName" />
+				</MkA>
 			</div>
 			<nav class="middle">
 				<MkA
 					v-click-anime
-					v-tooltip.noDelay.right="i18n.ts.timeline"
+					v-tooltip.noDelay.right="i18n.ts._timelines.home"
 					class="item _button index"
 					active-class="active"
 					to="/"
 					exact
 				>
 					<i :class="icon('ph-house icon ph-fw')"></i
-					><span class="text">{{ i18n.ts.timeline }}</span>
+					><span class="text">{{ i18n.ts._timelines.home }}</span>
 				</MkA>
 				<template v-for="item in menu">
 					<div v-if="item === '-'" class="divider"></div>
@@ -137,13 +126,13 @@
 					><span class="text">{{ i18n.ts.toPost }}</span>
 				</button>
 				<button
-					v-tooltip.noDelay.right="i18n.ts.help"
-					class="item _button help"
-					@click="openHelpMenu"
+					v-click-anime
+					v-tooltip.noDelay.right="`${i18n.ts.account}: @${me.username}`"
+					class="item _button account"
+					@click="openAccountMenu"
 				>
-					<i
-						:class="icon('help icon ph-info ph-xl ph-fw', false)"
-					></i>
+					<MkAvatar :user="me" class="icon" disable-link />
+					<span class="text">@{{ me.username }}</span>
 				</button>
 			</div>
 		</div>
@@ -156,12 +145,17 @@ import * as os from "@/os";
 import { navbarItemDef } from "@/navbar";
 import { openAccountMenu as openAccountMenu_ } from "@/account";
 import { isAdmin, isModerator, me } from "@/me";
-import { openHelpMenu_ } from "@/scripts/helpMenu";
 import { defaultStore } from "@/store";
 import { i18n } from "@/i18n";
 import { getInstanceInfo } from "@/instance";
-import { version } from "@/config";
+import { instanceName, version } from "@/config";
 import icon from "@/scripts/icon";
+
+const instanceMeta = getInstanceInfo();
+const instanceLogo =
+	instanceMeta.iconUrl ||
+	(instanceMeta as { faviconUrl?: string | null }).faviconUrl ||
+	"/favicon.png";
 
 const isEmpty = (x: string | null) => x == null || x === "";
 
@@ -231,10 +225,6 @@ function openAccountMenu(ev: MouseEvent) {
 	);
 }
 
-function openHelpMenu(ev: MouseEvent) {
-	openHelpMenu_(ev);
-}
-
 function more(ev: MouseEvent) {
 	os.popup(
 		defineAsyncComponent(() => import("@/components/MkLaunchPad.vue")),
@@ -293,30 +283,21 @@ function more(ev: MouseEvent) {
 			> .top {
 				position: relative;
 				z-index: 1;
-				padding-block: 2rem;
+				padding-block: 1.25rem 0.5rem;
 				padding-inline: 0;
-				> .banner {
-					position: absolute;
-					inset-block-start: 0;
-					inset-inline-start: 0;
-					inline-size: 100%;
-					block-size: 100%;
-					background-size: cover;
-					background-position: center center;
-					-webkit-mask-image: linear-gradient(var(--gradient));
-					mask-image: linear-gradient(var(--gradient));
-				}
 
-				> .account {
-					position: relative;
-					display: block;
-					text-align: center;
-					inline-size: 100%;
+				> .brand {
+					display: flex;
+					align-items: center;
+					justify-content: flex-start;
+					padding-inline: 28px;
+					margin-block-end: 0.5rem;
 
-					> .icon {
-						display: inline-block;
-						inline-size: 55px;
-						aspect-ratio: 1;
+					> .logo {
+						inline-size: 40px;
+						block-size: 40px;
+						border-radius: 12px;
+						object-fit: contain;
 					}
 				}
 			}
@@ -387,27 +368,41 @@ function more(ev: MouseEvent) {
 					}
 				}
 
-				> .help {
+				> .account {
 					position: relative;
-					display: block;
-					text-align: center;
+					display: flex;
+					align-items: center;
 					inline-size: 100%;
-					margin-block-start: 1rem;
+					padding-inline-start: 30px;
+					margin-block-start: 0.75rem;
 					color: var(--navFg);
+					line-height: 2.5rem;
 
 					> .icon {
-						display: inline-block;
-						inline-size: 38px;
+						inline-size: 28px;
 						aspect-ratio: 1;
+						margin-inline-end: 10px;
+						border-radius: 50%;
+					}
+
+					> .text {
+						font-size: 0.9em;
+						overflow: hidden;
+						text-overflow: ellipsis;
+					}
+
+					&:hover {
+						color: var(--accent);
 					}
 				}
 			}
 
 			> .middle {
-				flex: 0.1;
+				flex: 1;
+				overflow: auto;
 
 				> .divider {
-					margin-block: 16px;
+					margin-block: 12px;
 					margin-inline: 16px;
 					border-block-start: solid 0.5px var(--divider);
 				}
@@ -418,7 +413,7 @@ function more(ev: MouseEvent) {
 					align-items: center;
 					padding-inline-start: 30px;
 					line-height: 2.85rem;
-					margin-block-end: 0.5rem;
+					margin-block-end: 0.35rem;
 					white-space: nowrap;
 					inline-size: 100%;
 					text-align: start;
@@ -489,19 +484,19 @@ function more(ev: MouseEvent) {
 			inline-size: $nav-icon-only-width;
 
 			> .top {
-				padding-block: 2rem;
+				padding-block: 1.25rem 0.5rem;
 				padding-inline: 0;
 
-				> .account {
-					display: block;
-					text-align: center;
-					inline-size: 100%;
+				> .brand {
+					display: flex;
+					justify-content: center;
+					padding-inline: 0;
 
-					> .icon {
-						display: inline-block;
-						inline-size: 40px;
-						aspect-ratio: 1;
-						transform: translateY(0em);
+					> .logo {
+						inline-size: 36px;
+						block-size: 36px;
+						border-radius: 10px;
+						object-fit: contain;
 					}
 				}
 			}
@@ -553,37 +548,28 @@ function more(ev: MouseEvent) {
 					}
 				}
 
-				> .help {
-					position: relative;
-					display: block;
-					text-align: center;
-					inline-size: 100%;
-					margin-block-start: 1rem;
-					color: var(--navFg);
+				> .account {
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					margin-block-start: 0.75rem;
+					padding-inline: 0;
 
 					> .icon {
-						display: inline-block;
-						inline-size: 38px;
+						inline-size: 32px;
 						aspect-ratio: 1;
+						border-radius: 50%;
 					}
-				}
 
-				> .instance {
-					position: relative;
-					display: block;
-					text-align: center;
-					inline-size: 100%;
-
-					> .icon {
-						display: inline-block;
-						inline-size: 32px !important;
-						aspect-ratio: 1;
+					> .text {
+						display: none;
 					}
 				}
 			}
 
 			> .middle {
-				flex: 0.1;
+				flex: 1;
+				overflow: auto;
 
 				> .divider {
 					margin-block: 8px;

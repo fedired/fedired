@@ -1,24 +1,47 @@
-/* Tangerine / Mastodon-like chrome overrides for Fedired Vue client */
+/* Tangerine / Mastodon-like chrome for Fedired */
 
 :root {
 	--radius: 16px;
 	--tangerine-nav-radius: 12px;
 	--tangerine-pill: 999px;
+	--column-max: 640px;
 }
 
-/* Softer panels and notes */
 ._panel,
 ._block {
 	border-radius: var(--radius) !important;
 }
 
-/* Circular avatars by default when not forced square via store */
-.mk-avatar,
-[data-cy-user-avatar] {
-	border-radius: 50%;
+/* Center column: denser Mastodon-like feed */
+.dkgtipfy > .contents {
+	max-inline-size: 720px;
+	margin-inline: 0;
+	background: var(--bg);
 }
 
-/* Profile: round avatar + border like Mastodon */
+.dkgtipfy > .contents main {
+	background: var(--bg);
+}
+
+/* Notes: less “card soup”, clearer dividers */
+.cmuxhskf .tl._block,
+.notes._block,
+.tl {
+	background: var(--panel) !important;
+	border-radius: var(--radius);
+	overflow: clip;
+	box-shadow: none !important;
+}
+
+.showGapBetweenNotesInTimeline .note,
+.notes > .note {
+	border-radius: 0 !important;
+	margin-block: 0 !important;
+	border-block-end: 1px solid var(--divider);
+	box-shadow: none !important;
+}
+
+/* Circular avatars */
 .ftskorzw > .main > .profile > .main > .avatar {
 	border-radius: 50% !important;
 	border: 4px solid var(--panel);
@@ -54,27 +77,23 @@
 	border-radius: var(--radius) var(--radius) 0 0;
 }
 
-/* Follow / action pills */
 .ftskorzw .actions :deep(.mk-button),
 .ftskorzw .actions :deep(button) {
 	border-radius: var(--tangerine-pill) !important;
 }
 
-/* Timeline notes spacing */
-.showGapBetweenNotesInTimeline,
-.notes > .note,
-.tl .note {
-	border-radius: var(--radius);
+/* Header tabs: text first (Mastodon column tabs) */
+.fdidabkb > .tabs > .tab {
+	font-weight: 600;
+	opacity: 0.75;
+
+	&.active {
+		opacity: 1;
+		color: var(--accent);
+	}
 }
 
-/* Compose / search feel */
-.mk-input > input,
-.mk-input > textarea,
-input[type="search"] {
-	border-radius: var(--tangerine-pill);
-}
-
-/* Mobile FAB accent */
+/* Mobile FAB */
 .dkgtipfy > .postButton {
 	border-radius: 50% !important;
 	background: var(--accent) !important;
@@ -97,13 +116,16 @@ input[type="search"] {
 	}
 }
 
-/* Sidebar active: rounded rect (Tangerine) */
+/* Sidebar active: rounded rect */
 .mvcprjjd:not(.iconOnly) > .body > .middle > .item {
-	border-radius: var(--tangerine-nav-radius);
-
 	&:hover:before,
 	&:focus-within:before,
 	&.active:before {
 		border-radius: var(--tangerine-nav-radius) !important;
 	}
+}
+
+/* Hide Misskey wallpaper banner remnant */
+.mvcprjjd .banner {
+	display: none !important;
 }

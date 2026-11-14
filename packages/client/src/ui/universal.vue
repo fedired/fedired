@@ -20,7 +20,7 @@
 		</MkStickyContainer>
 
 		<div v-if="isDesktop" ref="widgetsEl" class="widgets-container">
-			<XWidgets @mounted="attachSticky" />
+			<XMastodonRail />
 		</div>
 
 		<button
@@ -206,6 +206,9 @@ import { deviceKind } from "@/scripts/device-kind";
 import icon from "@/scripts/icon";
 
 const XWidgets = defineAsyncComponent(() => import("./universal.widgets.vue"));
+const XMastodonRail = defineAsyncComponent(
+	() => import("./universal.mastodon-rail.vue"),
+);
 const XStatusBars = defineAsyncComponent(
 	() => import("@/ui/_common_/statusbars.vue"),
 );
@@ -298,27 +301,21 @@ mainRouter.on("change", () => {
 	updateButtonState();
 });
 
-if (defaultStore.state.widgets.length === 0) {
-	defaultStore.set("widgets", [
-		{
-			name: "postForm",
-			id: "a",
-			place: "right",
-			data: {},
-		},
-		{
-			name: "trends",
-			id: "b",
-			place: "right",
-			data: {},
-		},
-		{
-			name: "notifications",
-			id: "c",
-			place: "right",
-			data: {},
-		},
+// One-shot migrate old Misskey chrome → Mastodon-like shell
+if (localStorage.getItem("uiLayoutVersion") !== "mastodon-2") {
+	defaultStore.set("menu", [
+		"notifications",
+		"explore",
+		"favorites",
+		"lists",
+		"followRequests",
+		"search",
 	]);
+	defaultStore.set("showFixedPostForm", false);
+	defaultStore.set("squareAvatars", false);
+	defaultStore.set("showGapBetweenNotesInTimeline", false);
+	defaultStore.set("widgets", []);
+	localStorage.setItem("uiLayoutVersion", "mastodon-2");
 }
 
 function messagingStart(ev) {
@@ -667,8 +664,8 @@ console.log(mainRouter.currentRoute.value.name);
 		overflow-block: auto;
 		padding-block: 0;
 		padding-inline: var(--margin);
-		inline-size: 300px;
-		min-inline-size: max-content;
+		inline-size: 340px;
+		min-inline-size: 340px;
 		box-sizing: content-box;
 
 		@supports not (overflow-block: auto) {
