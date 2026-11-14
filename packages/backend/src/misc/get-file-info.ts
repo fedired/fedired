@@ -191,23 +191,23 @@ async function detectImageSize(path: string): Promise<{
  * Calculate average color of image
  */
 function getBlurhash(path: string): Promise<string> {
-	return new Promise((resolve, reject) => {
-		sharp(path)
-			.raw()
-			.ensureAlpha()
-			.resize(64, 64, { fit: "inside" })
-			.toBuffer((err, buffer, { width, height }) => {
-				if (err) return reject(err);
-
-				let hash: string;
-
-				try {
-					hash = encode(new Uint8ClampedArray(buffer), width, height, 7, 7);
-				} catch (e) {
-					return reject(e);
-				}
-
-				resolve(hash);
-			});
+	const img = sharp(path, {
+		failOn: "none",
+		limitInputPixels: 268402689,
 	});
+	return img
+		.raw()
+		.ensureAlpha()
+		.resize(64, 64, { fit: "inside" })
+		.toBuffer({ resolveWithObject: true })
+		.then(({ data, info }) =>
+			encode(new Uint8ClampedArray(data), info.width, info.height, 7, 7),
+		)
+		.finally(() => {
+			try {
+				img.destroy();
+			} catch {
+				/* ignore */
+			}
+		});
 }

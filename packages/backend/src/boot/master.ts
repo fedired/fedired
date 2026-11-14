@@ -122,6 +122,17 @@ async function spawnWorkers(
 	bootLogger.info(
 		`Starting ${clusterLimits.web} web workers and ${clusterLimits.queue} queue workers (total ${total})...`,
 	);
+
+	// Respawn with the same mode so a sharp/ffmpeg crash during upload
+	// does not leave Cloudflare with a dead origin (502 Host Error).
+	cluster.on("exit", (worker, code, signal) => {
+		const mode = (worker as any).__mode || "web";
+		bootLogger.warn(
+			`Worker ${worker.process.pid} (${mode}) died (code: ${code}, signal: ${signal}). Respawning...`,
+		);
+		spawnWorker(mode);
+	});
+
 	await Promise.all(workers.map((mode) => spawnWorker(mode)));
 	bootLogger.info("All workers started");
 }
@@ -129,6 +140,7 @@ async function spawnWorkers(
 function spawnWorker(mode: "web" | "queue"): Promise<void> {
 	return new Promise((res) => {
 		const worker = cluster.fork({ mode });
+		(worker as any).__mode = mode;
 		worker.on("message", (message) => {
 			if (message === "listenFailed") {
 				bootLogger.error("The server listen failed due to the previous error.");

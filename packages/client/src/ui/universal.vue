@@ -73,6 +73,27 @@
 				</div>
 			</button>
 			<button
+				:aria-label="i18n.t('messaging')"
+				class="button messaging _button"
+				@click="
+					mainRouter.push('/my/messaging');
+					updateButtonState();
+				"
+			>
+				<div
+					class="button-wrapper"
+					:class="buttonAnimIndex === 2 ? 'on' : ''"
+				>
+					<i :class="icon('ph-chats-teardrop')"></i
+					><span
+						v-if="$i?.hasUnreadMessagingMessage"
+						class="indicator"
+						:class="{ animateIndicator: $store.state.animation }"
+						><i class="ph-circle ph-fill"></i
+					></span>
+				</div>
+			</button>
+			<button
 				v-vibrate="5"
 				:aria-label="i18n.ts.explore"
 				class="button explore _button"
@@ -83,27 +104,9 @@
 			>
 				<div
 					class="button-wrapper"
-					:class="buttonAnimIndex === 2 ? 'on' : ''"
+					:class="buttonAnimIndex === 3 ? 'on' : ''"
 				>
 					<i :class="icon('ph-magnifying-glass')"></i>
-				</div>
-			</button>
-			<button
-				v-vibrate="5"
-				:aria-label="i18n.ts.menu"
-				class="button nav _button"
-				@click="drawerMenuShowing = true"
-			>
-				<div class="button-wrapper">
-					<i :class="icon('ph-list')"></i
-					><span
-						v-if="menuIndicated"
-						class="indicator"
-						:class="{
-							animateIndicator: defaultStore.state.animation,
-						}"
-						><i class="ph-circle ph-fill"></i
-					></span>
 				</div>
 			</button>
 			<button
@@ -118,7 +121,7 @@
 			>
 				<div
 					class="button-wrapper"
-					:class="buttonAnimIndex === 3 ? 'on' : ''"
+					:class="buttonAnimIndex === 4 ? 'on' : ''"
 				>
 					<i :class="icon('ph-user')"></i>
 				</div>
@@ -149,6 +152,23 @@
 			@click="messagingStart"
 		>
 			<i :class="icon('ph-user-plus')"></i>
+		</button>
+		<button
+			v-if="
+				!isMobile &&
+				isSignedIn(me) &&
+				mainRouter.currentRoute.value.name !== 'messaging'
+			"
+			v-vibrate="5"
+			:aria-label="i18n.ts.messaging"
+			class="messagesFab _button"
+			@click="mainRouter.push('/my/messaging')"
+		>
+			<i :class="icon('ph-chats-teardrop')"></i>
+			<span
+				v-if="me?.hasUnreadMessagingMessage"
+				class="badge"
+			></span>
 		</button>
 
 		<transition
@@ -283,12 +303,16 @@ function updateButtonState(): void {
 		buttonAnimIndex.value = 1;
 		return;
 	}
-	if (routerState.includes("/explore")) {
+	if (routerState.includes("/my/messaging")) {
 		buttonAnimIndex.value = 2;
 		return;
 	}
-	if (isSignedIn(me) && routerState.startsWith(`/@${me.username}`)) {
+	if (routerState.includes("/explore")) {
 		buttonAnimIndex.value = 3;
+		return;
+	}
+	if (isSignedIn(me) && routerState.startsWith(`/@${me.username}`)) {
+		buttonAnimIndex.value = 4;
 		return;
 	}
 	buttonAnimIndex.value = -1;
@@ -302,9 +326,10 @@ mainRouter.on("change", () => {
 });
 
 // One-shot migrate old Misskey chrome → Mastodon-like shell
-if (localStorage.getItem("uiLayoutVersion") !== "mastodon-3") {
+if (localStorage.getItem("uiLayoutVersion") !== "mastodon-4") {
 	defaultStore.set("menu", [
 		"notifications",
+		"messaging",
 		"explore",
 		"favorites",
 		"lists",
@@ -315,7 +340,7 @@ if (localStorage.getItem("uiLayoutVersion") !== "mastodon-3") {
 	defaultStore.set("squareAvatars", false);
 	defaultStore.set("showGapBetweenNotesInTimeline", false);
 	defaultStore.set("widgets", []);
-	localStorage.setItem("uiLayoutVersion", "mastodon-3");
+	localStorage.setItem("uiLayoutVersion", "mastodon-4");
 }
 
 function messagingStart(ev) {
@@ -524,14 +549,19 @@ console.log(mainRouter.currentRoute.value.name);
 	min-block-size: 100dvb;
 	box-sizing: border-box;
 	display: flex;
+	// X-style: keep the 3-column shell centered on wide screens
+	justify-content: center;
 
 	--stickyBottom: 1em;
 	&.isMobile {
 		--stickyBottom: 6rem;
+		justify-content: stretch;
 	}
 	&:not(.isMobile) {
 		> .contents {
-			border-inline-end: 0.5px solid var(--divider);
+			border-inline: 1px solid var(--divider);
+			flex: 0 1 640px;
+			max-inline-size: 640px;
 		}
 	}
 	&.wallpaper {
@@ -695,6 +725,39 @@ console.log(mainRouter.currentRoute.value.name);
 		overflow: auto;
 		overscroll-behavior: none;
 		background: var(--bg);
+	}
+
+	> .messagesFab {
+		position: fixed !important;
+		z-index: 1000;
+		inset-block-end: 1.5rem;
+		inset-inline-end: 1.5rem;
+		block-size: 3.25rem;
+		inline-size: 3.25rem;
+		border-radius: 50%;
+		background: var(--panel);
+		color: var(--fg);
+		border: 1px solid var(--divider);
+		box-shadow: 0 4px 18px var(--shadow);
+		font-size: 1.25rem;
+		display: grid;
+		place-items: center;
+
+		> .badge {
+			position: absolute;
+			inset-block-start: 6px;
+			inset-inline-end: 6px;
+			inline-size: 10px;
+			block-size: 10px;
+			border-radius: 50%;
+			background: var(--accent);
+			box-shadow: 0 0 0 2px var(--bg);
+		}
+
+		&:hover {
+			color: var(--accent);
+			border-color: var(--accent);
+		}
 	}
 
 	> .postButton,

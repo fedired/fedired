@@ -28,7 +28,12 @@ a[href^="/tags/"] {
 	color: var(--accent) !important;
 }
 
-/* Center column: one flat Mastodon column */
+/* X-style centered shell: sidebars + feed as a centered group */
+.dkgtipfy:not(.isMobile) {
+	justify-content: center;
+	background: var(--bg);
+}
+
 .dkgtipfy > .contents {
 	max-inline-size: 640px;
 	margin-inline: 0;
@@ -40,8 +45,12 @@ a[href^="/tags/"] {
 	background: var(--panel);
 }
 
-.dkgtipfy:not(.isMobile) > .contents {
-	border-inline-end: 1px solid var(--divider);
+.dkgtipfy:not(.isMobile) > :deep(.sidebar) {
+	flex: 0 0 250px;
+}
+
+.dkgtipfy:not(.isMobile) > .widgets-container {
+	flex: 0 0 340px;
 }
 
 /* Feed: no card soup */
@@ -186,6 +195,36 @@ a[href^="/tags/"] {
 
 .mvcprjjd .banner {
 	display: none !important;
+}
+
+/* Messaging: denser list like modern chat apps */
+.yweeujhr.dms,
+.yweeujhr.groups {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.yweeujhr .message._block,
+.rivslvers .message._block {
+	border-radius: 0 !important;
+	margin: 0 !important;
+	box-shadow: none !important;
+	border-block-end: 1px solid var(--divider);
+	background: transparent !important;
+}
+
+.rivslvers:hover .message._block {
+	background: color-mix(in srgb, var(--accent) 8%, transparent) !important;
+}
+
+.rivslvers:not(.isRead) .message._block {
+	background: color-mix(in srgb, var(--accent) 6%, transparent) !important;
+}
+
+.yweeujhr .start {
+	border-radius: 999px !important;
+	margin-block-end: 12px;
 }
 
 /* Right rail: lighter compose chrome */

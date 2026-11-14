@@ -316,10 +316,10 @@ RestrictRealtime=true
 RestrictSUIDSGID=true
 SecureBits=noroot-locked
 SystemCallArchitectures=native
-# No denegar @memlock ni @resources: sharp/libvips los necesita.
-# Si se bloquean, el worker muere con SIGSYS al subir imágenes → Cloudflare 502.
-SystemCallFilter=~@chown @clock @cpu-emulation @debug @ipc @keyring @module @mount @obsolete @privileged @raw-io @reboot @setuid @swap
-SystemCallFilter=capset pipe pipe2 setpriority
+# NO usar SystemCallFilter con Fedired: sharp/libvips/ffmpeg necesitan
+# syscalls de @ipc/@privileged/@memlock/@resources. Si se filtran, el
+# worker muere con SIGSYS al registrar media → Cloudflare 502.
+# SystemCallFilter=
 
 [Install]
 WantedBy=multi-user.target

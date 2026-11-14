@@ -7,8 +7,8 @@
 				:tabs="headerTabs"
 		/></template>
 		<div>
-			<MkSpacer :content-max="800">
-				<MkInfo :closeable="false" class="_gap">
+			<MkSpacer :content-max="640" :margin-min="0" :margin-max="0">
+				<MkInfo :closeable="true" class="_gap" style="margin: 12px">
 					<I18n :src="i18n.ts.messagingUnencryptedInfo"> </I18n>
 				</MkInfo>
 				<swiper

@@ -28,6 +28,7 @@ export const notePostInterruptors: {
 
 const menuOptions = [
 	"notifications",
+	"messaging",
 	"explore",
 	"favorites",
 	"lists",

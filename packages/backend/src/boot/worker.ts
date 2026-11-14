@@ -6,6 +6,13 @@ import os from "node:os";
  * Init worker process
  */
 export async function workerMain() {
+	process.on("unhandledRejection", (reason) => {
+		console.error("Worker unhandledRejection:", reason);
+	});
+	process.on("uncaughtException", (err) => {
+		console.error("Worker uncaughtException:", err);
+	});
+
 	await initDb();
 
 	if (!process.env.mode || process.env.mode === "web") {

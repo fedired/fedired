@@ -27,11 +27,21 @@ import {
 import type { DbUserScheduledNoteData, ThinUser } from "./types.js";
 import type { Note } from "@/models/entities/note.js";
 
-function renderError(e: Error): any {
+function renderError(e: unknown): any {
+	if (e == null) {
+		return { stack: undefined, message: String(e), name: "UnknownError" };
+	}
+	if (e instanceof Error) {
+		return {
+			stack: e.stack,
+			message: e.message,
+			name: e.name,
+		};
+	}
 	return {
-		stack: e.stack,
-		message: e.message,
-		name: e.name,
+		stack: undefined,
+		message: String(e),
+		name: typeof e,
 	};
 }
 
@@ -54,8 +64,8 @@ systemQueue
 			e: renderError(err),
 		}),
 	)
-	.on("error", (job: any, err: Error) =>
-		systemLogger.error(`error ${err}`, { job, e: renderError(err) }),
+	.on("error", (err: Error) =>
+		systemLogger.error(`error ${err}`, { e: renderError(err) }),
 	)
 	.on("stalled", (job) => systemLogger.warn(`stalled id=${job.id}`));
 
@@ -72,8 +82,8 @@ deliverQueue
 	.on("failed", (job, err) =>
 		deliverLogger.info(`failed(${err}) ${getJobInfo(job)} to=${job.data.to}`),
 	)
-	.on("error", (job: any, err: Error) =>
-		deliverLogger.warn(`error ${err}`, { job, e: renderError(err) }),
+	.on("error", (err: Error) =>
+		deliverLogger.warn(`error ${err}`, { e: renderError(err) }),
 	)
 	.on("stalled", (job) =>
 		deliverLogger.warn(`stalled ${getJobInfo(job)} to=${job.data.to}`),
@@ -93,8 +103,8 @@ inboxQueue
 			{ job, e: renderError(err) },
 		),
 	)
-	.on("error", (job: any, err: Error) =>
-		inboxLogger.error(`error ${err}`, { job, e: renderError(err) }),
+	.on("error", (err: Error) =>
+		inboxLogger.error(`error ${err}`, { e: renderError(err) }),
 	)
 	.on("stalled", (job) =>
 		inboxLogger.warn(
@@ -113,8 +123,8 @@ dbQueue
 	.on("failed", (job, err) =>
 		dbLogger.warn(`failed(${err}) id=${job.id}`, { job, e: renderError(err) }),
 	)
-	.on("error", (job: any, err: Error) =>
-		dbLogger.error(`error ${err}`, { job, e: renderError(err) }),
+	.on("error", (err: Error) =>
+		dbLogger.error(`error ${err}`, { e: renderError(err) }),
 	)
 	.on("stalled", (job) => dbLogger.warn(`stalled id=${job.id}`));
 
@@ -130,8 +140,8 @@ objectStorageQueue
 			e: renderError(err),
 		}),
 	)
-	.on("error", (job: any, err: Error) =>
-		objectStorageLogger.error(`error ${err}`, { job, e: renderError(err) }),
+	.on("error", (err: Error) =>
+		objectStorageLogger.error(`error ${err}`, { e: renderError(err) }),
 	)
 	.on("stalled", (job) => objectStorageLogger.warn(`stalled id=${job.id}`));
 
@@ -148,8 +158,8 @@ webhookDeliverQueue
 	.on("failed", (job, err) =>
 		webhookLogger.warn(`failed(${err}) ${getJobInfo(job)} to=${job.data.to}`),
 	)
-	.on("error", (job: any, err: Error) =>
-		webhookLogger.error(`error ${err}`, { job, e: renderError(err) }),
+	.on("error", (err: Error) =>
+		webhookLogger.error(`error ${err}`, { e: renderError(err) }),
 	)
 	.on("stalled", (job) =>
 		webhookLogger.warn(`stalled ${getJobInfo(job)} to=${job.data.to}`),
