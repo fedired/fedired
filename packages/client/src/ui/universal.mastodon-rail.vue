@@ -70,21 +70,47 @@ function openSearch() {
 	}
 
 	> .compose {
-		padding: 12px;
+		padding: 14px 14px 10px;
 		border-radius: 16px;
 		overflow: clip;
+		border: 1px solid var(--divider);
+		background: var(--panel);
 
 		> .compose-label {
-			font-size: 0.85em;
-			opacity: 0.6;
-			margin-block-end: 8px;
-			padding-inline: 4px;
+			font-size: 0.9em;
+			opacity: 0.55;
+			margin-block-end: 6px;
+			padding-inline: 2px;
+		}
+
+		:deep(.gafaadew) {
+			background: transparent !important;
+			box-shadow: none !important;
+		}
+
+		:deep(header) {
+			border: none !important;
+			padding-block: 2px 6px !important;
+		}
+
+		:deep(.submit) {
+			border-radius: 999px !important;
+			padding-inline: 1.1rem !important;
+		}
+
+		:deep(textarea),
+		:deep(.textarea),
+		:deep(.input) {
+			border-radius: 12px !important;
+			min-block-size: 4.5rem;
 		}
 	}
 
 	> .trends {
 		padding: 12px 8px 4px;
 		border-radius: 16px;
+		border: 1px solid var(--divider);
+		background: var(--panel);
 
 		> header {
 			font-weight: 700;
@@ -93,9 +119,11 @@ function openSearch() {
 			padding-inline: 8px;
 		}
 
-		:deep(.mkw-trends) {
+		:deep(.mkw-trends),
+		:deep(.mk-container) {
 			background: transparent !important;
 			box-shadow: none !important;
+			border: none !important;
 		}
 	}
 }

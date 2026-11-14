@@ -9,7 +9,7 @@
 				:class="{ isMobile: 'xytnxiau' }"
 			/>
 		</template>
-		<MkSpacer :content-max="800" :class="{ isMobile: 'upsvvhaz' }">
+		<MkSpacer :content-max="640" :margin-min="0" :margin-max="0" :class="{ isMobile: 'upsvvhaz' }">
 			<div ref="rootEl" v-hotkey.global="keymap" class="cmuxhskf">
 				<XPostForm
 					v-if="defaultStore.reactiveState.showFixedPostForm.value"
@@ -65,7 +65,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, provide, ref } from "vue";
 import { Virtual } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/vue";
 import XTutorial from "@/components/MkTutorialDialog.vue";
@@ -81,6 +81,9 @@ import { deviceKind } from "@/scripts/device-kind";
 import icon from "@/scripts/icon";
 import "swiper/scss";
 import "swiper/scss/virtual";
+
+// Mastodon-like: tabs only in header (no redundant "Timeline" title)
+provide("shouldOmitHeaderTitle", true);
 
 if (isSignedIn(me) && defaultStore.reactiveState.tutorial.value !== -1) {
 	os.popup(XTutorial, {}, {}, "closed");

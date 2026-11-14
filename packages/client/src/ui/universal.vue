@@ -302,7 +302,7 @@ mainRouter.on("change", () => {
 });
 
 // One-shot migrate old Misskey chrome → Mastodon-like shell
-if (localStorage.getItem("uiLayoutVersion") !== "mastodon-2") {
+if (localStorage.getItem("uiLayoutVersion") !== "mastodon-3") {
 	defaultStore.set("menu", [
 		"notifications",
 		"explore",
@@ -315,7 +315,7 @@ if (localStorage.getItem("uiLayoutVersion") !== "mastodon-2") {
 	defaultStore.set("squareAvatars", false);
 	defaultStore.set("showGapBetweenNotesInTimeline", false);
 	defaultStore.set("widgets", []);
-	localStorage.setItem("uiLayoutVersion", "mastodon-2");
+	localStorage.setItem("uiLayoutVersion", "mastodon-3");
 }
 
 function messagingStart(ev) {

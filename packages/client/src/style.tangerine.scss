@@ -7,41 +7,95 @@
 	--column-max: 640px;
 }
 
-._panel,
-._block {
-	border-radius: var(--radius) !important;
+/* Accent links (not browser blue) */
+._link,
+a._link,
+.url._link,
+.mention,
+.hashtag,
+.cmuxhskf a[href],
+.note-container a._link,
+.note-container .url {
+	color: var(--accent) !important;
 }
 
-/* Center column: denser Mastodon-like feed */
+.mention {
+	--mention: var(--accent);
+}
+
+.hashtag,
+a[href^="/tags/"] {
+	color: var(--accent) !important;
+}
+
+/* Center column: one flat Mastodon column */
 .dkgtipfy > .contents {
-	max-inline-size: 720px;
+	max-inline-size: 640px;
 	margin-inline: 0;
-	background: var(--bg);
+	background: var(--panel);
+	border-inline: 1px solid var(--divider);
 }
 
 .dkgtipfy > .contents main {
-	background: var(--bg);
+	background: var(--panel);
 }
 
-/* Notes: less “card soup”, clearer dividers */
+.dkgtipfy:not(.isMobile) > .contents {
+	border-inline-end: 1px solid var(--divider);
+}
+
+/* Feed: no card soup */
+.cmuxhskf {
+	> .tl._block,
+	> .post-form._block {
+		background: transparent !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		margin: 0 !important;
+	}
+}
+
 .cmuxhskf .tl._block,
 .notes._block,
 .tl {
-	background: var(--panel) !important;
-	border-radius: var(--radius);
-	overflow: clip;
+	background: transparent !important;
+	border-radius: 0 !important;
+	overflow: visible;
 	box-shadow: none !important;
 }
 
+/* Flatten notes into a single column with hairlines */
+.date-separated-list.noGap > *,
+.date-separated-list-nogap > *,
+.note-container,
+.tkcbzcuz,
 .showGapBetweenNotesInTimeline .note,
 .notes > .note {
-	border-radius: 0 !important;
 	margin-block: 0 !important;
-	border-block-end: 1px solid var(--divider);
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	background: transparent !important;
+}
+
+.date-separated-list.noGap > *:not(:last-child),
+.date-separated-list-nogap > *:not(:last-child),
+.note-container:not(:last-child) {
+	border-block-end: 1px solid var(--divider) !important;
+}
+
+/* Even if gaps setting is on, prefer flat look in main TL */
+.cmuxhskf .note-container {
+	border-radius: 0 !important;
+	background: transparent !important;
 	box-shadow: none !important;
 }
 
-/* Circular avatars */
+.cmuxhskf .note-container + .note-container,
+.cmuxhskf .tkcbzcuz + .tkcbzcuz {
+	border-block-start: 1px solid var(--divider);
+}
+
+/* Profile */
 .ftskorzw > .main > .profile > .main > .avatar {
 	border-radius: 50% !important;
 	border: 4px solid var(--panel);
@@ -74,7 +128,7 @@
 }
 
 .ftskorzw > .main > .profile > .main > .banner-container {
-	border-radius: var(--radius) var(--radius) 0 0;
+	border-radius: 0;
 }
 
 .ftskorzw .actions :deep(.mk-button),
@@ -82,14 +136,20 @@
 	border-radius: var(--tangerine-pill) !important;
 }
 
-/* Header tabs: text first (Mastodon column tabs) */
-.fdidabkb > .tabs > .tab {
-	font-weight: 600;
-	opacity: 0.75;
+/* Header tabs */
+.fdidabkb {
+	background: color-mix(in srgb, var(--panel) 92%, transparent) !important;
+	backdrop-filter: blur(12px);
+	border-block-end: 1px solid var(--divider);
 
-	&.active {
-		opacity: 1;
-		color: var(--accent);
+	> .tabs > .tab {
+		font-weight: 600;
+		opacity: 0.75;
+
+		&.active {
+			opacity: 1;
+			color: var(--accent);
+		}
 	}
 }
 
@@ -116,7 +176,6 @@
 	}
 }
 
-/* Sidebar active: rounded rect */
 .mvcprjjd:not(.iconOnly) > .body > .middle > .item {
 	&:hover:before,
 	&:focus-within:before,
@@ -125,7 +184,43 @@
 	}
 }
 
-/* Hide Misskey wallpaper banner remnant */
 .mvcprjjd .banner {
 	display: none !important;
+}
+
+/* Right rail: lighter compose chrome */
+.mastodon-rail {
+	.compose {
+		background: var(--panel) !important;
+		border: 1px solid var(--divider);
+		box-shadow: none !important;
+	}
+
+	.compose :deep(.gafaadew) {
+		background: transparent !important;
+		box-shadow: none !important;
+		border: none !important;
+		padding: 0 !important;
+	}
+
+	.compose :deep(header) {
+		padding-block: 4px 8px !important;
+		margin: 0 !important;
+		border: none !important;
+	}
+
+	.compose :deep(.submit),
+	.compose :deep(button.submit) {
+		border-radius: var(--tangerine-pill) !important;
+		min-inline-size: 5.5rem;
+	}
+
+	.trends {
+		background: var(--panel) !important;
+		border: 1px solid var(--divider);
+	}
+
+	.search {
+		background: var(--bg) !important;
+	}
 }
