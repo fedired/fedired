@@ -7,7 +7,14 @@
 				:display-back-button="true"
 		/></template>
 		<MkSpacer :content-max="900" :margin-min="20" :margin-max="32">
-			<div ref="el" class="vvcocwet" :class="{ wide: !narrow }">
+			<div
+				ref="el"
+				class="vvcocwet"
+				:class="{
+					wide: !narrow && currentPage?.route.name != null,
+					indexOnly: currentPage?.route.name == null,
+				}"
+			>
 				<div class="body">
 					<div
 						v-if="!narrow || currentPage?.route.name == null"
@@ -27,7 +34,7 @@
 						</div>
 					</div>
 					<section
-						v-if="!(narrow && currentPage?.route.name == null)"
+						v-if="currentPage?.route.name != null"
 						class="main"
 					>
 						<div>
@@ -270,31 +277,14 @@ onMounted(() => {
 
 	narrow.value = el.value.offsetWidth < NARROW_THRESHOLD;
 
-	if (!narrow.value && currentPage.value?.route.name == null) {
-		router.replace("/settings/profile");
-	}
 });
 
 onActivated(() => {
 	narrow.value = el.value.offsetWidth < NARROW_THRESHOLD;
-
-	if (!narrow.value && currentPage.value?.route.name == null) {
-		router.replace("/settings/profile");
-	}
 });
 
 onUnmounted(() => {
 	ro.disconnect();
-});
-
-watch(router.currentRef, (to) => {
-	if (
-		to?.route.name === "settings" &&
-		to.child?.route.name == null &&
-		!narrow.value
-	) {
-		router.replace("/settings/profile");
-	}
 });
 
 const emailNotConfigured = computed(
@@ -346,6 +336,13 @@ definePageMetadata(INFO);
 					}
 				}
 			}
+		}
+	}
+
+	&.indexOnly {
+		> .body > .nav {
+			inline-size: 100%;
+			padding-inline-end: 0;
 		}
 	}
 

@@ -8,7 +8,13 @@
 					to="/"
 					exact
 				>
-					<img class="logo" :src="instanceLogo" :alt="instanceName" />
+					<img
+						class="logo"
+						:src="instanceLogo"
+						:alt="instanceName"
+						@error="onLogoError"
+					/>
+					<span class="brand-text">{{ instanceName }}</span>
 				</MkA>
 			</div>
 			<nav class="middle">
@@ -59,6 +65,16 @@
 						></span>
 					</component>
 				</template>
+				<MkA
+					v-click-anime
+					v-tooltip.noDelay.right="i18n.ts.profile"
+					class="item _button"
+					active-class="active"
+					:to="`/@${me.username}`"
+				>
+					<i :class="icon('ph-user icon ph-fw')"></i
+					><span class="text">{{ i18n.ts.profile }}</span>
+				</MkA>
 				<div class="divider"></div>
 				<MkA
 					v-if="isModerator"
@@ -81,17 +97,6 @@
 					><i :class="icon('ph-door icon ph-fw')"></i
 					><span class="text">{{ i18n.ts.controlPanel }}</span>
 				</MkA>
-				<MkA
-					v-else-if="me.emojiModPerm !== 'unauthorized'"
-					v-click-anime
-					v-tooltip.noDelay.right="i18n.ts.customEmojis"
-					class="item _button"
-					active-class="active"
-					to="/admin/emojis"
-				>
-					<i :class="icon('ph-smiley icon ph-fw')"></i
-					><span class="text">{{ i18n.ts.customEmojis }}</span>
-				</MkA>
 				<button
 					v-click-anime
 					v-tooltip.noDelay.right="i18n.ts.more"
@@ -110,6 +115,7 @@
 					class="item _button"
 					active-class="active"
 					to="/settings"
+					exact
 				>
 					<i :class="icon('ph-gear icon ph-fw')"></i
 					><span class="text">{{ i18n.ts.settings }}</span>
@@ -132,7 +138,11 @@
 					@click="openAccountMenu"
 				>
 					<MkAvatar :user="me" class="icon" disable-link />
-					<span class="text">@{{ me.username }}</span>
+					<span class="meta">
+						<span class="name">{{ me.name || me.username }}</span>
+						<span class="handle">@{{ me.username }}</span>
+					</span>
+					<i :class="icon('ph-dots-three more')"></i>
 				</button>
 			</div>
 		</div>
@@ -152,10 +162,17 @@ import { instanceName, version } from "@/config";
 import icon from "@/scripts/icon";
 
 const instanceMeta = getInstanceInfo();
-const instanceLogo =
+const fallbackLogo = "/static-assets/icons/192.png";
+const instanceLogo = ref(
 	instanceMeta.iconUrl ||
-	(instanceMeta as { faviconUrl?: string | null }).faviconUrl ||
-	"/favicon.png";
+		(instanceMeta as { faviconUrl?: string | null }).faviconUrl ||
+		fallbackLogo,
+);
+function onLogoError() {
+	if (instanceLogo.value !== fallbackLogo) {
+		instanceLogo.value = fallbackLogo;
+	}
+}
 
 const isEmpty = (x: string | null) => x == null || x === "";
 
@@ -290,14 +307,27 @@ function more(ev: MouseEvent) {
 					display: flex;
 					align-items: center;
 					justify-content: flex-start;
-					padding-inline: 28px;
-					margin-block-end: 0.5rem;
+					gap: 10px;
+					padding-inline: 22px;
+					margin-block-end: 0.75rem;
+					color: var(--fg);
+					text-decoration: none;
 
 					> .logo {
-						inline-size: 40px;
-						block-size: 40px;
-						border-radius: 12px;
+						inline-size: 36px;
+						block-size: 36px;
+						border-radius: 10px;
 						object-fit: contain;
+						background: var(--panel);
+					}
+
+					> .brand-text {
+						font-size: 1.25em;
+						font-weight: 800;
+						letter-spacing: -0.02em;
+						overflow: hidden;
+						text-overflow: ellipsis;
+						white-space: nowrap;
 					}
 				}
 			}
@@ -308,49 +338,47 @@ function more(ev: MouseEvent) {
 
 				> .post {
 					position: relative;
-					inline-size: 100%;
-					block-size: 40px;
+					inline-size: calc(100% - 32px);
+					margin-inline: 16px;
+					block-size: 48px;
 					color: var(--fgOnAccent);
-					font-weight: bold;
-					text-align: start;
+					font-weight: 800;
+					text-align: center;
 					display: flex;
 					align-items: center;
+					justify-content: center;
+					gap: 8px;
 
 					&:before {
 						content: "";
 						display: block;
-						inline-size: calc(100% - 38px);
+						inline-size: 100%;
 						block-size: 100%;
-						margin: auto;
 						position: absolute;
 						inset: 0;
 						border-radius: 999px;
-						background: linear-gradient(
-							var(--gradient-to-inline-end),
-							var(--buttonGradateA),
-							var(--buttonGradateB)
-						);
+						background: var(--accent);
 					}
 
 					&:hover,
 					&:focus-within,
 					&.active {
 						&:before {
-							background: var(--accentLighten);
-							transition: all 0.4s ease;
+							filter: brightness(1.08);
+							transition: all 0.2s ease;
 						}
 					}
 
 					> .icon,
 					> .text {
 						position: relative;
-						inset-inline-start: 3rem;
-						color: var(--fgOnAccent);
-						transform: translateY(0em);
+						color: var(--fgOnAccent, #fff);
+						inset-inline-start: 0;
 					}
 
 					> .text {
-						margin-inline-start: 1rem;
+						margin-inline-start: 0;
+						font-size: 1.05em;
 					}
 				}
 
@@ -372,27 +400,53 @@ function more(ev: MouseEvent) {
 					position: relative;
 					display: flex;
 					align-items: center;
-					inline-size: 100%;
-					padding-inline-start: 30px;
-					margin-block-start: 0.75rem;
+					inline-size: calc(100% - 16px);
+					margin: 0.75rem 8px 0;
+					padding: 8px 10px;
 					color: var(--navFg);
-					line-height: 2.5rem;
+					border-radius: 999px;
+					gap: 10px;
+					text-align: start;
 
 					> .icon {
-						inline-size: 28px;
+						inline-size: 40px;
 						aspect-ratio: 1;
-						margin-inline-end: 10px;
 						border-radius: 50%;
+						flex-shrink: 0;
 					}
 
-					> .text {
-						font-size: 0.9em;
-						overflow: hidden;
-						text-overflow: ellipsis;
+					> .meta {
+						display: flex;
+						flex-direction: column;
+						min-inline-size: 0;
+						flex: 1;
+						line-height: 1.2;
+
+						> .name {
+							font-weight: 700;
+							font-size: 0.95em;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							white-space: nowrap;
+						}
+
+						> .handle {
+							font-size: 0.85em;
+							opacity: 0.65;
+							overflow: hidden;
+							text-overflow: ellipsis;
+							white-space: nowrap;
+						}
+					}
+
+					> .more {
+						opacity: 0.7;
+						flex-shrink: 0;
 					}
 
 					&:hover {
-						color: var(--accent);
+						background: var(--accentedBg);
+						color: var(--fg);
 					}
 				}
 			}
@@ -411,25 +465,28 @@ function more(ev: MouseEvent) {
 					position: relative;
 					display: flex;
 					align-items: center;
-					padding-inline-start: 30px;
-					line-height: 2.85rem;
-					margin-block-end: 0.35rem;
+					padding-inline-start: 18px;
+					margin-inline: 8px;
+					line-height: 3rem;
+					margin-block-end: 0.15rem;
 					white-space: nowrap;
-					inline-size: 100%;
+					inline-size: calc(100% - 16px);
 					text-align: start;
 					box-sizing: border-box;
 					color: var(--navFg);
+					border-radius: 999px;
 
 					> .icon {
 						position: relative;
-						inline-size: 32px;
-						margin-inline-end: 8px;
+						inline-size: 28px;
+						margin-inline-end: 14px;
+						font-size: 1.35em;
 					}
 
 					> .indicator {
 						position: absolute;
-						inset-block-start: 0;
-						inset-inline-start: 20px;
+						inset-block-start: 6px;
+						inset-inline-start: 28px;
 						color: var(--navIndicator);
 						font-size: 8px;
 						animation: blink 1s infinite;
@@ -437,39 +494,38 @@ function more(ev: MouseEvent) {
 
 					> .text {
 						position: relative;
-						font-size: 0.9em;
+						font-size: 1.15em;
+						font-weight: 500;
 						overflow: hidden;
 						text-overflow: ellipsis;
+					}
+
+					&.active > .text {
+						font-weight: 800;
 					}
 
 					&:hover,
 					&:focus-within {
 						text-decoration: none;
-						color: var(--navHoverFg);
-						transition: all 0.4s ease;
+						color: var(--fg);
+						background: var(--listItemHoverBg, var(--accentedBg));
 					}
 
 					&.active {
-						color: var(--navActive);
+						color: var(--fg);
+						font-weight: 800;
 					}
 
 					&:hover,
 					&:focus-within,
 					&.active {
-						color: var(--accent);
-						transition: all 0.4s ease;
-
 						&:before {
-							content: "";
-							display: block;
-							inline-size: calc(100% - 34px);
-							block-size: 100%;
-							margin: auto;
-							position: absolute;
-							inset: 0;
-							border-radius: 12px;
-							background: var(--accentedBg);
+							display: none;
 						}
+					}
+
+					&.active {
+						background: transparent;
 					}
 				}
 			}
@@ -497,6 +553,10 @@ function more(ev: MouseEvent) {
 						block-size: 36px;
 						border-radius: 10px;
 						object-fit: contain;
+					}
+
+					> .brand-text {
+						display: none;
 					}
 				}
 			}
@@ -554,14 +614,16 @@ function more(ev: MouseEvent) {
 					align-items: center;
 					margin-block-start: 0.75rem;
 					padding-inline: 0;
+					inline-size: 100%;
 
 					> .icon {
-						inline-size: 32px;
+						inline-size: 36px;
 						aspect-ratio: 1;
 						border-radius: 50%;
 					}
 
-					> .text {
+					> .meta,
+					> .more {
 						display: none;
 					}
 				}
