@@ -5,7 +5,7 @@
 				v-model:tab="src"
 				:actions="headerActions"
 				:tabs="headerTabs"
-				:display-my-avatar="true"
+				:display-my-avatar="false"
 				:class="{ isMobile: 'xytnxiau' }"
 			/>
 		</template>
@@ -243,8 +243,15 @@ const headerTabs = computed(() => [
 		? [
 				{
 					key: "home",
-					title: i18n.ts._timelines.home,
-					icon: `${icon("ph-house")}`,
+					title: i18n.ts._timelines.forYou,
+				},
+			]
+		: []),
+	...(isSocialTimelineAvailable
+		? [
+				{
+					key: "social",
+					title: i18n.ts._timelines.following,
 				},
 			]
 		: []),
@@ -253,16 +260,6 @@ const headerTabs = computed(() => [
 				{
 					key: "local",
 					title: i18n.ts._timelines.local,
-					icon: `${icon("ph-users")}`,
-				},
-			]
-		: []),
-	...(isSocialTimelineAvailable
-		? [
-				{
-					key: "social",
-					title: i18n.ts._timelines.social,
-					icon: `${icon("ph-handshake")}`,
 				},
 			]
 		: []),
@@ -271,7 +268,6 @@ const headerTabs = computed(() => [
 				{
 					key: "recommended",
 					title: i18n.ts._timelines.recommended,
-					icon: `${icon("ph-thumbs-up")}`,
 				},
 			]
 		: []),
@@ -280,7 +276,6 @@ const headerTabs = computed(() => [
 				{
 					key: "global",
 					title: i18n.ts._timelines.global,
-					icon: `${icon("ph-planet")}`,
 				},
 			]
 		: []),

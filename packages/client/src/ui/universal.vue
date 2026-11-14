@@ -5,6 +5,38 @@
 	>
 		<XSidebar v-if="!isMobile" />
 
+		<header v-if="isMobile" class="xMobileTop">
+			<button
+				v-vibrate="5"
+				class="avatarBtn _button"
+				:aria-label="i18n.ts.menu"
+				@click="drawerMenuShowing = true"
+			>
+				<MkAvatar
+					v-if="isSignedIn(me)"
+					:user="me"
+					class="avatar"
+					disable-link
+				/>
+				<i v-else :class="icon('ph-list')"></i>
+				<span
+					v-if="menuIndicated || $i?.hasUnreadNotification"
+					class="dot"
+				></span>
+			</button>
+			<MkA class="logoWrap" to="/" exact>
+				<img class="logo" :src="mobileLogo" alt="Fedired" />
+			</MkA>
+			<button
+				v-vibrate="5"
+				class="action _button"
+				:aria-label="i18n.ts.search"
+				@click="mainRouter.push('/explore')"
+			>
+				<i :class="icon('ph-magnifying-glass')"></i>
+			</button>
+		</header>
+
 		<MkStickyContainer class="contents">
 			<template #header
 				><XStatusBars :class="$style.statusbars"
@@ -32,7 +64,7 @@
 			<i :class="icon('ph-stack')"></i>
 		</button>
 
-		<div v-if="isMobile" class="buttons">
+		<div v-if="isMobile" class="buttons xMobileBottom">
 			<button
 				v-vibrate="5"
 				:aria-label="i18n.ts.home"
@@ -52,6 +84,35 @@
 				</div>
 			</button>
 			<button
+				v-vibrate="5"
+				:aria-label="i18n.ts.search"
+				class="button explore _button"
+				@click="
+					mainRouter.push('/explore');
+					updateButtonState();
+				"
+			>
+				<div
+					class="button-wrapper"
+					:class="buttonAnimIndex === 1 ? 'on' : ''"
+				>
+					<i :class="icon('ph-magnifying-glass')"></i>
+				</div>
+			</button>
+			<button
+				v-vibrate="5"
+				:aria-label="'Ordo / Sushell'"
+				class="button ordo _button"
+				@click="openOrdoHub"
+			>
+				<div
+					class="button-wrapper"
+					:class="buttonAnimIndex === 2 ? 'on' : ''"
+				>
+					<i :class="icon('ph-circles-three')"></i>
+				</div>
+			</button>
+			<button
 				:aria-label="i18n.t('notifications')"
 				class="button notifications _button"
 				@click="
@@ -61,7 +122,7 @@
 			>
 				<div
 					class="button-wrapper"
-					:class="buttonAnimIndex === 1 ? 'on' : ''"
+					:class="buttonAnimIndex === 3 ? 'on' : ''"
 				>
 					<i class="ph-bell ph-bold ph-lg"></i
 					><span
@@ -82,48 +143,15 @@
 			>
 				<div
 					class="button-wrapper"
-					:class="buttonAnimIndex === 2 ? 'on' : ''"
+					:class="buttonAnimIndex === 4 ? 'on' : ''"
 				>
-					<i :class="icon('ph-chats-teardrop')"></i
+					<i :class="icon('ph-envelope-simple')"></i
 					><span
 						v-if="$i?.hasUnreadMessagingMessage"
 						class="indicator"
 						:class="{ animateIndicator: $store.state.animation }"
 						><i class="ph-circle ph-fill"></i
 					></span>
-				</div>
-			</button>
-			<button
-				v-vibrate="5"
-				:aria-label="i18n.ts.explore"
-				class="button explore _button"
-				@click="
-					mainRouter.push('/explore');
-					updateButtonState();
-				"
-			>
-				<div
-					class="button-wrapper"
-					:class="buttonAnimIndex === 3 ? 'on' : ''"
-				>
-					<i :class="icon('ph-magnifying-glass')"></i>
-				</div>
-			</button>
-			<button
-				v-if="isSignedIn(me)"
-				v-vibrate="5"
-				:aria-label="i18n.ts.profile"
-				class="button profile _button"
-				@click="
-					mainRouter.push(`/@${me.username}`);
-					updateButtonState();
-				"
-			>
-				<div
-					class="button-wrapper"
-					:class="buttonAnimIndex === 4 ? 'on' : ''"
-				>
-					<i :class="icon('ph-user')"></i>
 				</div>
 			</button>
 		</div>
@@ -140,7 +168,7 @@
 			class="postButton button post _button"
 			@click="os.post()"
 		>
-			<i :class="icon('ph-pencil')"></i>
+			<i :class="icon('ph-plus')"></i>
 		</button>
 		<button
 			v-if="
@@ -224,6 +252,16 @@ import { mainRouter } from "@/router";
 import { provideMetadataReceiver } from "@/scripts/page-metadata";
 import { deviceKind } from "@/scripts/device-kind";
 import icon from "@/scripts/icon";
+import { getInstanceInfo } from "@/instance";
+
+const mobileLogo =
+	getInstanceInfo().iconUrl ||
+	(getInstanceInfo() as { faviconUrl?: string | null }).faviconUrl ||
+	"/static-assets/icons/192.png";
+
+function openOrdoHub() {
+	window.open("https://sushell.com", "_blank", "noopener,noreferrer");
+}
 
 const XWidgets = defineAsyncComponent(() => import("./universal.widgets.vue"));
 const XMastodonRail = defineAsyncComponent(
@@ -299,19 +337,15 @@ function updateButtonState(): void {
 		buttonAnimIndex.value = 0;
 		return;
 	}
-	if (routerState.includes("/my/notifications")) {
+	if (routerState.includes("/explore")) {
 		buttonAnimIndex.value = 1;
 		return;
 	}
-	if (routerState.includes("/my/messaging")) {
-		buttonAnimIndex.value = 2;
-		return;
-	}
-	if (routerState.includes("/explore")) {
+	if (routerState.includes("/my/notifications")) {
 		buttonAnimIndex.value = 3;
 		return;
 	}
-	if (isSignedIn(me) && routerState.startsWith(`/@${me.username}`)) {
+	if (routerState.includes("/my/messaging")) {
 		buttonAnimIndex.value = 4;
 		return;
 	}
@@ -551,11 +585,75 @@ console.log(mainRouter.currentRoute.value.name);
 	display: flex;
 	// X-style: keep the 3-column shell centered on wide screens
 	justify-content: center;
+	flex-wrap: wrap;
 
 	--stickyBottom: 1em;
 	&.isMobile {
 		--stickyBottom: 6rem;
 		justify-content: stretch;
+		flex-direction: column;
+		flex-wrap: nowrap;
+	}
+
+	> .xMobileTop {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 100;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+		align-items: center;
+		padding: 8px 12px;
+		padding-block-start: calc(8px + env(safe-area-inset-top, 0px));
+		background: color-mix(in srgb, var(--bg) 92%, transparent);
+		backdrop-filter: blur(16px);
+		border-block-end: 1px solid var(--divider);
+
+		> .avatarBtn {
+			justify-self: start;
+			position: relative;
+			inline-size: 36px;
+			block-size: 36px;
+			border-radius: 50%;
+			overflow: visible;
+
+			> .avatar {
+				inline-size: 36px;
+				block-size: 36px;
+				border-radius: 50%;
+			}
+
+			> .dot {
+				position: absolute;
+				inset-block-start: 0;
+				inset-inline-end: 0;
+				inline-size: 9px;
+				block-size: 9px;
+				border-radius: 50%;
+				background: var(--accent);
+				box-shadow: 0 0 0 2px var(--bg);
+			}
+		}
+
+		> .logoWrap {
+			justify-self: center;
+			display: grid;
+			place-items: center;
+
+			> .logo {
+				inline-size: 28px;
+				block-size: 28px;
+				object-fit: contain;
+				border-radius: 8px;
+			}
+		}
+
+		> .action {
+			justify-self: end;
+			inline-size: 36px;
+			block-size: 36px;
+			font-size: 1.2em;
+			color: var(--fg);
+		}
 	}
 	&:not(.isMobile) {
 		> .contents {
@@ -563,6 +661,12 @@ console.log(mainRouter.currentRoute.value.name);
 			flex: 0 1 640px;
 			max-inline-size: 640px;
 		}
+	}
+
+	&.isMobile > .contents {
+		flex: 1;
+		min-block-size: 0;
+		inline-size: 100%;
 	}
 	&.wallpaper {
 		background: var(--wallpaperOverlay);
@@ -762,16 +866,16 @@ console.log(mainRouter.currentRoute.value.name);
 
 	> .postButton,
 	.widgetButton {
-		inset-block-end: calc(var(--stickyBottom) + 0.5rem);
-		inset-inline-end: 1.25rem;
-		block-size: 3.5rem;
-		inline-size: 3.5rem;
+		inset-block-end: calc(var(--stickyBottom) + 0.75rem);
+		inset-inline-end: 1.1rem;
+		block-size: 3.4rem;
+		inline-size: 3.4rem;
 		background-position: center;
 		background: var(--accent);
 		color: var(--fgOnAccent, #fff);
 		position: fixed !important;
-		z-index: 1000;
-		font-size: 18px;
+		z-index: 1001;
+		font-size: 22px;
 		border-radius: 50%;
 		box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 40%, transparent);
 		transition: background 0.6s;
@@ -797,39 +901,40 @@ console.log(mainRouter.currentRoute.value.name);
 		z-index: 1000;
 		inset-block-end: 0;
 		inset-inline-start: 0;
-		padding: 12px 12px calc(env(safe-area-inset-bottom, 0px) + 12px) 12px;
+		padding: 4px 8px calc(env(safe-area-inset-bottom, 0px) + 6px) 8px;
 		display: flex;
 		inline-size: 100%;
 		box-sizing: border-box;
-		background-color: var(--bg);
+		background-color: color-mix(in srgb, var(--bg) 94%, transparent);
+		backdrop-filter: blur(16px);
+		border-block-start: 1px solid var(--divider);
 
 		> .button {
 			position: relative;
 			flex: 1;
 			padding: 0;
 			margin: auto;
-			block-size: 3.5rem;
+			block-size: 3.25rem;
 			border-radius: 8px;
 			background-position: center;
-			transition: background 0.6s;
-			color: var(--fg);
+			transition: color 0.15s;
+			color: var(--fgTransparentWeak, #71767b);
 
 			&:active {
-				background-color: var(--accentedBg);
-				background-size: 100%;
-				transition: background 0.1s;
+				color: var(--fg);
 			}
 
 			> .button-wrapper {
 				display: inline-flex;
 				justify-content: center;
+				font-size: 1.35em;
 
 				&.on {
-					background-color: var(--accentedBg);
-					inline-size: 100%;
-					border-radius: 999px;
-					transform: translateY(-0.5em);
-					transition: all 0.2s ease-in-out;
+					color: var(--fg);
+					background: transparent;
+					inline-size: auto;
+					border-radius: 0;
+					transform: none;
 				}
 
 				> .indicator {

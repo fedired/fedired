@@ -1676,10 +1676,14 @@ _instanceCharts:
   filesTotal: "Total acumulado de cantidad de archivos"
 _timelines:
   home: "Inicio"
+  forYou: "Para ti"
+  following: "Siguiendo"
   local: "Local"
   recommended: "Recomendado"
   social: "Social"
   global: "Global"
+continuarConOrdoId: "Continuar con Ordo ID"
+ordoIdCaption: "Una sola identidad Sushell · FELvus · Fedired"
 _pages:
   newPage: "Crear página"
   editPage: "Editar página"

@@ -1858,10 +1858,14 @@ _instanceCharts:
   filesTotal: "Cumulative number of files"
 _timelines:
   home: "Home"
+  forYou: "For you"
+  following: "Following"
   local: "Local"
   recommended: "Recommended"
   social: "Social"
   global: "Global"
+continuarConOrdoId: "Continue with Ordo ID"
+ordoIdCaption: "Single sign-on via Sushell · FELvus · Fedired"
 _pages:
   newPage: "Create a new Page"
   editPage: "Edit this Page"

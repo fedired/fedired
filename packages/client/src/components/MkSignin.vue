@@ -64,6 +64,20 @@
 					style="margin: 1rem auto"
 					>{{ signing ? i18n.ts.loggingIn : i18n.ts.login }}</MkButton
 				>
+				<div class="ordo-sep _formBlock">
+					<span>{{ i18n.ts.or || "—" }}</span>
+				</div>
+				<MkButton
+					class="_formBlock ordo-btn"
+					type="button"
+					:disabled="signing"
+					style="margin: 0 auto 1rem"
+					@click="loginWithOrdo"
+				>
+					<i :class="icon('ph-identification-card')"></i>
+					{{ i18n.ts.continuarConOrdoId }}
+				</MkButton>
+				<p class="ordo-cap">{{ i18n.ts.ordoIdCaption }}</p>
 			</div>
 			<div
 				v-if="totpLogin"
@@ -198,6 +212,12 @@ function onLogin(res) {
 	if (props.autoSet) {
 		return signIn(res.i);
 	}
+}
+
+function loginWithOrdo() {
+	// Join hub: Ordo ID lives on Sushell. Full OIDC callback lands in a later pass.
+	const returnTo = encodeURIComponent(window.location.origin);
+	window.location.href = `https://sushell.com/?ordo=fedired&return_to=${returnTo}`;
 }
 
 function queryKey() {
@@ -361,6 +381,41 @@ function showSuspendedDialog() {
 			background-size: cover;
 			border-radius: 100%;
 			transition: background-image 0.2s ease-in;
+		}
+
+		.ordo-sep {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			opacity: 0.55;
+			font-size: 0.85em;
+			margin-block: 4px 8px;
+
+			&::before,
+			&::after {
+				content: "";
+				flex: 1;
+				border-block-start: 1px solid var(--divider);
+			}
+		}
+
+		.ordo-btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			border-radius: 999px !important;
+			border: 1px solid var(--divider);
+			background: var(--panel) !important;
+			color: var(--fg) !important;
+			font-weight: 700;
+		}
+
+		.ordo-cap {
+			text-align: center;
+			font-size: 0.8em;
+			opacity: 0.65;
+			margin: 0 12px 8px;
 		}
 	}
 }
