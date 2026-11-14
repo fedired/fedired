@@ -177,13 +177,14 @@ const otherMenuItemIndicated = computed(() => {
 });
 
 const calcViewState = () => {
+	// Keep labeled nav longer (Mastodon/Tangerine-style) until narrow widths
 	iconOnly.value =
-		window.innerWidth <= 1279 || defaultStore.state.menuDisplay === "sideIcon";
+		window.innerWidth <= 900 || defaultStore.state.menuDisplay === "sideIcon";
 };
 
 calcViewState();
 
-matchMedia("(max-inline-size: 1279px)").onchange = (mql) => calcViewState();
+matchMedia("(max-inline-size: 900px)").onchange = (mql) => calcViewState();
 
 watch(defaultStore.reactiveState.menuDisplay, () => {
 	calcViewState();
@@ -471,7 +472,7 @@ function more(ev: MouseEvent) {
 							margin: auto;
 							position: absolute;
 							inset: 0;
-							border-radius: 999px;
+							border-radius: 12px;
 							background: var(--accentedBg);
 						}
 					}

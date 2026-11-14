@@ -496,10 +496,11 @@ onUnmounted(() => {
 
 				> .banner-container {
 					position: relative;
-					block-size: 250px;
+					block-size: 220px;
 					overflow: hidden;
 					background-size: cover;
 					background-position: center;
+					border-radius: var(--radius) var(--radius) 0 0;
 					> .banner {
 						block-size: 100%;
 						background-color: #26233a;
@@ -618,10 +619,16 @@ onUnmounted(() => {
 						inset-block-start: 6px;
 						inset-inline-end: 12px;
 						padding: 8px;
-						border-radius: 24px;
+						border-radius: 999px;
 						display: flex;
 						justify-content: center;
 						align-items: center;
+						gap: 8px;
+
+						:deep(button),
+						:deep(.mk-button) {
+							border-radius: 999px !important;
+						}
 					}
 
 					> .title {
@@ -718,12 +725,15 @@ onUnmounted(() => {
 				> .avatar {
 					display: block;
 					position: absolute;
-					inset-block-start: 170px;
+					inset-block-start: 150px;
 					inset-inline-start: 16px;
 					z-index: 2;
 					inline-size: 120px;
 					block-size: 120px;
-					box-shadow: 1px 1px 3px rgba(#000, 0.2);
+					border-radius: 50%;
+					border: 4px solid var(--panel);
+					overflow: hidden;
+					box-shadow: 0 2px 8px rgba(#000, 0.18);
 				}
 
 				> .description {
@@ -783,12 +793,17 @@ onUnmounted(() => {
 
 				> .status {
 					display: flex;
-					padding: 24px;
+					flex-wrap: wrap;
+					gap: 4px 8px;
+					justify-content: flex-start;
+					padding: 16px 24px 20px;
 					border-block-start: solid 0.5px var(--divider);
 
 					> a {
-						flex: 1;
-						text-align: center;
+						flex: 0 0 auto;
+						text-align: start;
+						padding-inline-end: 18px;
+						color: var(--fg);
 
 						&.active {
 							color: var(--accent);
@@ -796,15 +811,20 @@ onUnmounted(() => {
 
 						&:hover {
 							text-decoration: none;
+							color: var(--accent);
 						}
 
 						> b {
-							display: block;
+							display: inline;
 							line-height: 16px;
+							font-weight: 700;
+							margin-inline-end: 0.35em;
 						}
 
 						> span {
-							font-size: 70%;
+							display: inline;
+							font-size: 85%;
+							opacity: 0.7;
 						}
 					}
 				}

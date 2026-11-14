@@ -35,24 +35,6 @@
 		<div v-if="isMobile" class="buttons">
 			<button
 				v-vibrate="5"
-				:aria-label="i18n.ts.menu"
-				class="button nav _button"
-				@click="drawerMenuShowing = true"
-			>
-				<div class="button-wrapper">
-					<i :class="icon('ph-list')"></i
-					><span
-						v-if="menuIndicated"
-						class="indicator"
-						:class="{
-							animateIndicator: defaultStore.state.animation,
-						}"
-						><i class="ph-circle ph-fill"></i
-					></span>
-				</div>
-			</button>
-			<button
-				v-vibrate="5"
 				:aria-label="i18n.ts.home"
 				class="button home _button"
 				@click="
@@ -69,7 +51,7 @@
 					<i :class="icon('ph-house')"></i>
 				</div>
 			</button>
-					<button
+			<button
 				:aria-label="i18n.t('notifications')"
 				class="button notifications _button"
 				@click="
@@ -91,10 +73,11 @@
 				</div>
 			</button>
 			<button
-				:aria-label="i18n.t('messaging')"
-				class="button messaging _button"
+				v-vibrate="5"
+				:aria-label="i18n.ts.explore"
+				class="button explore _button"
 				@click="
-					mainRouter.push('/my/messaging');
+					mainRouter.push('/explore');
 					updateButtonState();
 				"
 			>
@@ -102,29 +85,52 @@
 					class="button-wrapper"
 					:class="buttonAnimIndex === 2 ? 'on' : ''"
 				>
-					<i class="ph-chats-teardrop ph-bold ph-lg"></i
+					<i :class="icon('ph-magnifying-glass')"></i>
+				</div>
+			</button>
+			<button
+				v-vibrate="5"
+				:aria-label="i18n.ts.menu"
+				class="button nav _button"
+				@click="drawerMenuShowing = true"
+			>
+				<div class="button-wrapper">
+					<i :class="icon('ph-list')"></i
 					><span
-						v-if="$i?.hasUnreadMessagingMessage"
+						v-if="menuIndicated"
 						class="indicator"
-						:class="{ animateIndicator: $store.state.animation }"
+						:class="{
+							animateIndicator: defaultStore.state.animation,
+						}"
 						><i class="ph-circle ph-fill"></i
 					></span>
 				</div>
 			</button>
 			<button
-				:aria-label="i18n.t('_deck._columns.widgets')"
-				class="button widget _button"
-				@click="widgetsShowing = true"
+				v-if="isSignedIn(me)"
+				v-vibrate="5"
+				:aria-label="i18n.ts.profile"
+				class="button profile _button"
+				@click="
+					mainRouter.push(`/@${me.username}`);
+					updateButtonState();
+				"
 			>
-				<div class="button-wrapper">
-					<i class="ph-stack ph-bold ph-lg"></i>
+				<div
+					class="button-wrapper"
+					:class="buttonAnimIndex === 3 ? 'on' : ''"
+				>
+					<i :class="icon('ph-user')"></i>
 				</div>
 			</button>
 		</div>
 
 
 		<button
-			v-if="isMobile && mainRouter.currentRoute.value.name === 'index'"
+			v-if="
+				isMobile &&
+				mainRouter.currentRoute.value.name !== 'messaging'
+			"
 			ref="postButton"
 			v-vibrate="5"
 			:aria-label="i18n.ts.note"
@@ -193,7 +199,7 @@ import { defaultStore } from "@/store";
 import { navbarItemDef } from "@/navbar";
 import { i18n } from "@/i18n";
 import { openAccountMenu as openAccountMenuImpl } from "@/account";
-import { me } from "@/me";
+import { isSignedIn, me } from "@/me";
 import { mainRouter } from "@/router";
 import { provideMetadataReceiver } from "@/scripts/page-metadata";
 import { deviceKind } from "@/scripts/device-kind";
@@ -204,7 +210,7 @@ const XStatusBars = defineAsyncComponent(
 	() => import("@/ui/_common_/statusbars.vue"),
 );
 
-const DESKTOP_THRESHOLD = 1100;
+const DESKTOP_THRESHOLD = 1000;
 const MOBILE_THRESHOLD = 500;
 
 // デスクトップでウィンドウを狭くしたときモバイルUIが表示されて欲しいことはあるので deviceKind === 'desktop' の判定は行わない
@@ -274,11 +280,15 @@ function updateButtonState(): void {
 		buttonAnimIndex.value = 1;
 		return;
 	}
-	if (routerState.includes("/my/messaging")) {
+	if (routerState.includes("/explore")) {
 		buttonAnimIndex.value = 2;
 		return;
 	}
-	buttonAnimIndex.value = 3;
+	if (isSignedIn(me) && routerState.startsWith(`/@${me.username}`)) {
+		buttonAnimIndex.value = 3;
+		return;
+	}
+	buttonAnimIndex.value = -1;
 }
 
 updateButtonState();
@@ -291,19 +301,19 @@ mainRouter.on("change", () => {
 if (defaultStore.state.widgets.length === 0) {
 	defaultStore.set("widgets", [
 		{
-			name: "calendar",
+			name: "postForm",
 			id: "a",
 			place: "right",
 			data: {},
 		},
 		{
-			name: "notifications",
+			name: "trends",
 			id: "b",
 			place: "right",
 			data: {},
 		},
 		{
-			name: "trends",
+			name: "notifications",
 			id: "c",
 			place: "right",
 			data: {},
@@ -512,7 +522,7 @@ console.log(mainRouter.currentRoute.value.name);
 
 .dkgtipfy {
 	$ui-font-size: 1em; // TODO: どこかに集約したい
-	$widgets-hide-threshold: 1090px;
+	$widgets-hide-threshold: 1000px;
 
 	min-block-size: 100dvb;
 	box-sizing: border-box;
@@ -633,7 +643,7 @@ console.log(mainRouter.currentRoute.value.name);
 	> .contents {
 		inline-size: 100%;
 		min-inline-size: 0;
-		$widgets-hide-threshold: 1090px;
+		$widgets-hide-threshold: 1000px;
 		overflow-x: clip;
 		overflow-inline: clip;
 
@@ -692,18 +702,18 @@ console.log(mainRouter.currentRoute.value.name);
 
 	> .postButton,
 	.widgetButton {
-		inset-block-end: var(--stickyBottom);
-		inset-inline-end: 1.5rem;
-		block-size: 4rem;
-		inline-size: 4rem;
+		inset-block-end: calc(var(--stickyBottom) + 0.5rem);
+		inset-inline-end: 1.25rem;
+		block-size: 3.5rem;
+		inline-size: 3.5rem;
 		background-position: center;
-		background: var(--panelHighlight);
-		color: var(--fg);
+		background: var(--accent);
+		color: var(--fgOnAccent, #fff);
 		position: fixed !important;
 		z-index: 1000;
-		font-size: 16px;
-		border-radius: 10px;
-		box-shadow: var(--shadow) 0px 0px 25px;
+		font-size: 18px;
+		border-radius: 50%;
+		box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 40%, transparent);
 		transition: background 0.6s;
 		transition: transform 0.3s;
 

@@ -1,0 +1,109 @@
+/* Tangerine / Mastodon-like chrome overrides for Fedired Vue client */
+
+:root {
+	--radius: 16px;
+	--tangerine-nav-radius: 12px;
+	--tangerine-pill: 999px;
+}
+
+/* Softer panels and notes */
+._panel,
+._block {
+	border-radius: var(--radius) !important;
+}
+
+/* Circular avatars by default when not forced square via store */
+.mk-avatar,
+[data-cy-user-avatar] {
+	border-radius: 50%;
+}
+
+/* Profile: round avatar + border like Mastodon */
+.ftskorzw > .main > .profile > .main > .avatar {
+	border-radius: 50% !important;
+	border: 4px solid var(--panel);
+	overflow: hidden;
+	box-shadow: 0 0 0 1px var(--divider);
+}
+
+.ftskorzw > .main > .profile > .main > .status {
+	gap: 8px;
+	justify-content: flex-start;
+	padding-block: 16px;
+	padding-inline: 24px;
+
+	> a {
+		flex: 0 0 auto;
+		text-align: start;
+		padding-inline-end: 20px;
+
+		> b {
+			display: inline;
+			font-size: 1.05em;
+			margin-inline-end: 0.35em;
+		}
+
+		> span {
+			font-size: 0.85em;
+			opacity: 0.7;
+		}
+	}
+}
+
+.ftskorzw > .main > .profile > .main > .banner-container {
+	border-radius: var(--radius) var(--radius) 0 0;
+}
+
+/* Follow / action pills */
+.ftskorzw .actions :deep(.mk-button),
+.ftskorzw .actions :deep(button) {
+	border-radius: var(--tangerine-pill) !important;
+}
+
+/* Timeline notes spacing */
+.showGapBetweenNotesInTimeline,
+.notes > .note,
+.tl .note {
+	border-radius: var(--radius);
+}
+
+/* Compose / search feel */
+.mk-input > input,
+.mk-input > textarea,
+input[type="search"] {
+	border-radius: var(--tangerine-pill);
+}
+
+/* Mobile FAB accent */
+.dkgtipfy > .postButton {
+	border-radius: 50% !important;
+	background: var(--accent) !important;
+	color: var(--fgOnAccent, #fff) !important;
+	box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.dkgtipfy > .buttons {
+	border-block-start: 1px solid var(--divider);
+	background: color-mix(in srgb, var(--bg) 92%, transparent);
+	backdrop-filter: blur(12px);
+
+	> .button {
+		border-radius: var(--tangerine-nav-radius);
+
+		> .button-wrapper.on {
+			background-color: color-mix(in srgb, var(--accent) 18%, transparent);
+			color: var(--accent);
+		}
+	}
+}
+
+/* Sidebar active: rounded rect (Tangerine) */
+.mvcprjjd:not(.iconOnly) > .body > .middle > .item {
+	border-radius: var(--tangerine-nav-radius);
+
+	&:hover:before,
+	&:focus-within:before,
+	&.active:before {
+		border-radius: var(--tangerine-nav-radius) !important;
+	}
+}
